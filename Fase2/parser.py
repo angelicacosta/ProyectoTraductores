@@ -166,50 +166,11 @@ def p_Operacion(p):
     | TkCaracter
 	'''
 	if (len(p) == 2):
-		if (isinstance(p[1], int) ):
-			p[0]=Node(p[1], None, None)
-		elif (isinstance(p[1], str) ):
-			p[0]=Node(p[1], None, None)
-		elif (isinstance(p[1], str)):  #Investigar caracter
-			p[0]=Node("Id", None, p[1])
-		elif(p[1] == 'true'):
-			p[0]=Node(p[1], None, None)
-		elif(p[1] == 'false'):
-			p[0]=Node(p[1], None, None)
-		else:
-			p[0]=Node("Caracter", None, p[1])
+		p[0]=Node(p[1], None, None)
 	elif (len(p) == 3):
-		if (p[1]=='-'):
-			p[0]=Node(p[1],  [p[2]], None)
-		else:
-			p[0]=Node(p[1],  [p[2]], None)
+		p[0]=Node(p[1],  [p[2]], None)
 	else:
-		if (p[2] == '+'):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '-'):
-			p[0]=Node(p[2], [p[1],p[3]], None)
-		elif (p[2] == '*'):
-			p[0]=Node(p[2], [p[1],p[3]], None)
-		elif (p[2] == '/'):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '%'):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '<'):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '<='):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '>'):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '>='):
-			p[0]=Node(p[2],  [p[1],p[3]],None)
-		elif (p[2] == '='):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '/='):
-			p[0]=Node(p[2],  [p[1],p[3]],None)
-		elif (p[2] == '/\\'):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
-		elif (p[2] == '\/'):
-			p[0]=Node(p[2], [p[1],p[3]], None)
+		p[0]=Node(p[2],  [p[1],p[3]], None)
 
 '''
 def p_Operacion(p):
