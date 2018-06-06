@@ -4,6 +4,25 @@ import ply.lex as lex
 import sys
 from Entrega1 import tokens, obtenerColumna
 
+precedence = (
+	('left', 'TkSuma', 'TkResta'),
+    ('left', 'TkMult', 'TkDiv','TkMod'),
+	#('right', 'UMINUS'),
+	('left', 'TkDisyuncion'),
+	('right', 'TkConjuncion'),
+	('right', 'TkNegacion'),
+	('left','TkSiguienteCar'),
+	('left', 'TkAnteriorCar'), 
+	('left', 'TkValorAscii'),
+	('left','TkConca'),
+	('left','TkShift'),
+	('left', 'TkCorcheteAbre', 'TkCorcheteCierra'),
+    ('nonassoc', 'TkMenor', 'TkMenorIgual','TkMayor','TkMayorIgual','TkIgual','TkDesigual'),
+	('left', 'TkParAbre','TkParCierra'),
+	('left', 'TkHacer')
+	#('right', 'UMINUS'),
+)
+
 class Node:
 	def __init__(self,type,children=None,leaf=None):
 		self.type = type
@@ -15,7 +34,7 @@ class Node:
 		#print("type: "+self.type+", children[0]: "+str(children[0])+", children[1]: "+str(children[1])+", leaf: "+str(leaf))
 	
 	def __str__(self):
-		return str(self.type) + '\n'
+		return str(self.type)
 
 def p_S(p):
 	''' S : TkWith Lista_Declaraciones Bloque_Inst 
@@ -41,11 +60,10 @@ def p_Lista_Variables(p):
 	| TkId TkAsignacion Operacion TkComa Lista_Variables
 	| TkId TkAsignacion Operacion TkDosPuntos Tipo
 	| TkId TkDosPuntos Tipo '''
-	if (p[2]==','):
-		p[0]= str(p[1]) + ' '+ str(p[3])
-	elif (len(p)==6):
+	if (len(p)==6):
 		p[0]= str(Node(p[2], [p[1], p[3]], None)) + ' '+ str(p[5])
-	else: 
+	else:
+		p[0]= str(p[1]) +'\n' + str(p[3])   
 
 def p_Tipo(p):
 	''' Tipo : TkInt 
@@ -123,7 +141,6 @@ def p_Inst_For(p):
 	else:
 		pass 
 
-
 def p_Operacion(p):
 	'''Operacion : TkParAbre Operacion TkParCierra
 	| Operacion TkSuma Operacion 
@@ -192,9 +209,19 @@ def p_Operacion(p):
 		elif (p[2] == '/\\'):
 			p[0]=Node(p[2],  [p[1],p[3]], None)
 		elif (p[2] == '\/'):
-			p[0]=Node(p[2],  [p[1],p[3]], None)
+			p[0]=Node(p[2], [p[1],p[3]], None)
 
 '''
+def p_Operacion(p):
+	Operacion : TkParAbre Operacion TkParCierra
+	| Op_Aritmetica
+	| Op_booleana
+	| OpRelacional
+	| OpCaracter
+	
+	p[0] = p[1]
+
+
 def p_Op_Aritmetica(p):
 	Op_Aritmetica : Op_Aritmetica TkSuma Op_Aritmetica 
 	| Op_Aritmetica TkResta Op_Aritmetica 
@@ -202,31 +229,32 @@ def p_Op_Aritmetica(p):
 	| Op_Aritmetica TkDiv Op_Aritmetica 
 	| Op_Aritmetica TkMod Op_Aritmetica 
 	| TkResta Op_Aritmetica 
-	| Exp 
+	| TkId
+	| TkNum 
 	
 	if (len(p) == 2):
-		if (p[1] != TkNum):
-			Node("Id", None, p[1])
-		else:
-			Node("Entero", None, p[1])
-	elif (len(p) == 3):
-		Node("Menos Unario", [None,p[2]], p[1])
+		p[0]=Node(p[1], None, None)
+	elif (len(p)==3):
+		p[0]=Node(p[1], [p[2]], None)
 	else:
-		if (p[2] == TkSuma):
-			Node("Suma", [p[1],p[3]], p[2])
-		elif (p[2] == TkResta):
-			Node("Resta", [p[1],p[3]], p[2])
-		elif (p[2] == TkMult):
-			Node("Multiplicacion", [p[1],p[3]], p[2])
-		elif (p[2] == TkDiv):
-			Node("Division", [p[1],p[3]], p[2])
-		elif (p[2] == TkMod):
-			Node("Modulo", [p[1],p[3]], p[2])
-
-def p_Op_booleana(p):
-	Op_booleana :  Operacion
+		p[0]=Node(p[2], [p[1],p[3]], None)
+		
 	
-	p[0]=p[1]
+def p_Op_booleana(p):
+	Op_booleana : Op_booleana TkConjuncion Op_booleana
+    | Op_booleana TkDisyuncion Op_booleana 
+    | TkNegacion Op_booleana
+	| TkId
+	| TkTrue
+	| TkFalse 
+	
+	if (len(p) == 2):
+		p[0]=Node(p[1], None, None)
+	elif (len(p) == 3):
+		p[0]=Node(p[1], [p[2]], None)
+	else:
+		p[0]=Node(p[2],  [p[1],p[3]], None)
+	
 
 def p_OpRelacional(p):
 	OpRelacional : Op_Aritmetica TkMenor Op_Aritmetica
@@ -235,11 +263,13 @@ def p_OpRelacional(p):
 	| Op_Aritmetica TkMayorIgual Op_Aritmetica 
 	| Op_Aritmetica TkIgual Op_Aritmetica 
 	| Op_Aritmetica TkDesigual Op_Aritmetica 
-	
-	p[0]=p[1]
-
+	| TkId
+	| TkNum
+	if (len(p)==2):
+		p[0]=Node(p[1], None, None)
+	else:
+		p[0]=Node(p[2],  [p[1],p[3]], None)
 '''
-
 def p_Op_Arreglo(p):
 	'''Op_Arreglo : TkId TkCorcheteAbre TkId TkCorcheteCierra 
 	| TkId TkCorcheteAbre TkNum TkCorcheteCierra 
@@ -277,8 +307,8 @@ def p_Inst_Entrada(p):
 
 
 # Error rule for syntax errors
-def p_error(p):
-	print ("Error de sintaxis en la linea")
+#def p_error(p):
+#	print ("Error de sintaxis en la linea")
 
 
 def printTree(nodo, tabs):
