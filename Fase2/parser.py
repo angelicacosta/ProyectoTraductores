@@ -97,10 +97,9 @@ def p_Inst_If(p):
 	| TkIf Operacion TkHacer Lista_Instrucciones TkOtherwise TkHacer Lista_Instrucciones TkEnd
 	'''
 	if(len(p)==6):
-		p[0]= Node('Condicional', [p[2], p[4]], None)
+		p[0]= Node('Condicional', [Node(p[1],[p[2],p[4]], None)], p[5])
 	else:
-		p[0]= Node('Condicional', [p[2], p[4], p[7]], None)
-		pass 
+		p[0]= Node('Condicional', [Node(p[1],[p[2], p[4]]), Node(p[5],[p[7]])], p[8])
 
 
 def p_Inst_Bool(p):
