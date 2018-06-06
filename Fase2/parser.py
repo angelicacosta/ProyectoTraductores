@@ -31,18 +31,21 @@ def p_Lista_Declaraciones(p):
 	'''Lista_Declaraciones : TkVar Lista_Variables Lista_Declaraciones 
 	| TkVar Lista_Variables '''
 
-	if(len(p)>=3):
-		pass
+	if(len(p)>3):
+		p[0]= str(p[2]) +'\n' + str(p[3])  
 	else:
 		p[0] = p[2]
 
 def p_Lista_Variables(p):
 	''' Lista_Variables : TkId TkComa Lista_Variables 
+	| TkId TkAsignacion Operacion TkComa Lista_Variables
+	| TkId TkAsignacion Operacion TkDosPuntos Tipo
 	| TkId TkDosPuntos Tipo '''
 	if (p[2]==','):
 		p[0]= str(p[1]) + ' '+ str(p[3])
+	elif (len(p)==6):
+		p[0]= str(Node(p[2], [p[1], p[3]], None)) + ' '+ str(p[5])
 	else: 
-		p[0]= str(p[1]) + ' '+ str(p[3])
 
 def p_Tipo(p):
 	''' Tipo : TkInt 
