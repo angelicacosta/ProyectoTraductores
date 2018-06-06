@@ -39,7 +39,10 @@ def p_Lista_Declaraciones(p):
 def p_Lista_Variables(p):
 	''' Lista_Variables : TkId TkComa Lista_Variables 
 	| TkId TkDosPuntos Tipo '''
-	pass
+	if (p[2]==','):
+		p[0]= str(p[1]) + ' '+ str(p[3])
+	else: 
+		p[0]= str(p[1]) + ' '+ str(p[3])
 
 def p_Tipo(p):
 	''' Tipo : TkInt 
@@ -49,7 +52,7 @@ def p_Tipo(p):
 	| TkArray  TkCorcheteAbre TkNum TkCorcheteCierra TkOf TkId 
 	'''
 	if (p[1]=='array'):
-		p[0] = Node("Array", [p[3],p[6]], p[1])
+		p[0] = Node(p[1], [p[2],p[3],p[4],p[6]], p[5])
 	else: 
 		p[0]=p[1]
 
@@ -76,7 +79,7 @@ def p_Inst(p):
 
 def p_Inst_Punto(p):
 	'''Inst_Punto : TkId TkPunto  TkPuntoYComa ''' ##Chequear
-	p[0]=Node(TkPunto, [p[1],p[2]], )
+	p[0]=Node(p[2], [p[1]],None )
 
 def p_Lista_Instrucciones(p):
 	'''Lista_Instrucciones : Inst 
@@ -94,10 +97,11 @@ def p_Inst_If(p):
 	| TkIf Operacion TkHacer Lista_Instrucciones TkOtherwise TkHacer Lista_Instrucciones TkEnd
 	'''
 	if(len(p)==6):
-		p[0]= Node('Condicional', [p[2], p[4]], p[1])
+		p[0]= Node('Condicional', [p[2], p[4]], None)
 	else:
-		p[0]= Node('Condicional', [p[2], p[4], p[7]], p[1])
+		p[0]= Node('Condicional', [p[2], p[4], p[7]], None)
 		pass 
+
 
 def p_Inst_Bool(p):
 	'''Inst_Bool : TkWhile Operacion TkHacer Lista_Instrucciones TkOtherwise TkHacer Lista_Instrucciones TkEnd
@@ -113,7 +117,7 @@ def p_Inst_For(p):
 	| TkFor TkId TkFrom TkNum TkTo TkNum TkStep Operacion TkHacer Inst TkEnd
 	'''
 	if (len(p)==6):
-		p[0]= Node(p[1], [p[2], p[4]], p[1])
+		p[0]= Node(p[1], [p[2], p[3], p[4], p[5], p[6]], None )
 	else:
 		pass 
 
