@@ -95,7 +95,6 @@ def p_Inst(p):
 	| Inst_For 
 	| Inst_Entrada  
 	| Inst_Salida
-	| OpCaracter
 	| Inst_Punto
 	'''
 	p[0] = p[1]
@@ -137,7 +136,7 @@ def p_Inst_Bool(p):
 	'''
 	p[2].changeType('-Guardia: '+str(p[2]))
 	p[4].changeType('-Exito: '+str(p[4]))
-	p[0] = Node('WHILE', [p[2],p[4]], None)
+	p[1] = Node('WHILE', [p[2],p[4]], None)
 	
 
 def p_Inst_For(p):
@@ -210,13 +209,10 @@ def p_Operacion(p):
 			p[0] = Node('booleano (FALSE)+', None, None)
 		else:
 			caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
-			if not isinstance(p[1],Node):
-				if caracter.match(p[1]):
-					p[0] = Node('caracter ('+p[1]+')', None, None)
-				else:
-					p[0] = Node('variable ("'+p[1]+'")', None, None)
+			if caracter.match(p[1]):
+				p[0] = Node('caracter ('+p[1]+')', None, None)
 			else:
-				p[0]=p[1]
+				p[0] = Node('variable ("'+p[1]+'")', None, None)
 	
 	elif (len(p) == 3):
 		if (p[2] == '-'):
@@ -259,44 +255,26 @@ def p_Operacion(p):
 			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2])
 
 def p_Op_Arreglo(p):
-	'''Op_Arreglo : Op_Arreglo TkCorcheteAbre Operacion TkCorcheteCierra 
-	| TkShift Op_Arreglo 
-	| Op_Arreglo TkConca Op_Arreglo
-	| TkId
+	'''Op_Arreglo : TkId TkCorcheteAbre TkId TkCorcheteCierra 
+	| TkId TkCorcheteAbre TkNum TkCorcheteCierra 
+	| TkShift TkId 
+	| TkId TkConca TkId
 	'''
-	if (len(p)==2):
-		p[0] = Node('variable ("'+p[1]+'")',None);
-	
-	elif (len(p)==3):
-		p[2].changeType('-arreglo: '+str(p[2]))
-		p[0]=Node("SHIFT",[p[2]])
-
-	elif (len(p)==4):
-			p[1].changeType('-Operando izquierdo: '+str(p[1]))
-			p[3].changeType('-Operando derecho: '+str(p[3]))
-			p[0] = Node("CONCATENACION", [p[1],p[3]])
-	else:
-		p[1].changeType("-Operando izquierdo: "+str(p[1]))
-		p[3].changeType("-Operando derecho: "+str(p[3]))
-		p[0]=Node("INDEXACION",[p[1],p[3]])
-
+	p[0]=p[1]
 
 def p_OpCaracter(p):
-	'''OpCaracter : TkId TkSiguienteCar 
-	| TkId TkAnteriorCar 
-	| TkValorAscii TkId
+	'''OpCaracter : TkCaracter TkSiguienteCar 
+	| TkCaracter TkAnteriorCar 
+	| TkValorAscii TkCaracter
 	'''
 	p[0]=p[1]
 
 #Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
 	'''Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
-	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''   
+	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''  
 	
-	if (isinstance(p[1],str)):
-		p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
-	else:
-		p[1].changeType('-Contenedor: '+str(p[1]))
+	p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
 	if (isinstance(p[3].type,int)):
 		p[3].changeType('-Expresion: literal entero('+str(p[3])+')')
 	else:
