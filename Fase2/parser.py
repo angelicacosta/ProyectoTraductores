@@ -102,6 +102,7 @@ def p_Inst(p):
 	| Inst_Entrada  
 	| Inst_Salida
 	| Inst_Punto
+	| S
 	'''
 	p[0] = p[1]
 
@@ -323,8 +324,8 @@ def p_Inst_Entrada(p):
 
 
 #Error rule for syntax errors
-def p_error(p):
-	print ("Error de sintaxis en la linea")
+#def p_error(p):
+#	print ("Error de sintaxis en la linea")
 
 def printTree(nodo, tabs):
 	print('\t'*tabs + str(nodo))
