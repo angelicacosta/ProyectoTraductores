@@ -101,8 +101,12 @@ def p_Inst(p):
 	p[0] = p[1]
 
 def p_Inst_Punto(p):
-	'''Inst_Punto : TkId TkPunto TkPuntoYComa '''
-	p[0]=Node('PUNTO', [Node('Contenedor: '+p[1],None,None)],None )
+	'''Inst_Punto : TkId TkPunto Operacion TkPuntoYComa '''
+	if (isinstance(p[3],int)):
+		p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1]),Node('-Expresion: '+str(p[3]))],None )
+	else:
+		p[3].changeType('-Expresion: '+str(p[3]))
+		p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1]),p[3]])
 
 def p_Lista_Instrucciones(p):
 	'''Lista_Instrucciones : Inst 
