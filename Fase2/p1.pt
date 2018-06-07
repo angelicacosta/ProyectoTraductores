@@ -1,12 +1,13 @@
 with 
 	var p: int
 begin 
+	while (b < 3 /\ True) ->
+		i <- 34 * 2 + 5;
+	end	
 	if a ->
 		a <- a + 25;
 	otherwise ->
 		a <- a + b;
 	end
-	while (b < 3 /\ True) ->
-		i <- 34 * 2 + 5;
-	end	
+	p.(3+7);
 end
