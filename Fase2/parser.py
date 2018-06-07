@@ -193,6 +193,7 @@ def p_Operacion(p):
 	| Operacion TkDisyuncion Operacion 
 	| TkNegacion Operacion
 	| OpCaracter
+	| Op_Arreglo
 	| TkId  
 	| TkNum
 	| TkTrue 
@@ -272,7 +273,6 @@ def p_OpCaracter(p):
 #Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
 	'''Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
-	| TkId TkAsignacion Op_Arreglo TkPuntoYComa
 	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''  
 	
 	p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
@@ -283,8 +283,7 @@ def p_Inst_Asignacion(p):
 	p[0] = Node('ASIGNACION', [p[1], p[3]], None)
 
 def p_Inst_Salida(p):
-	'''Inst_Salida : TkPrint Operacion TkPuntoYComa
-	| TkPrint Op_Arreglo TkPuntoYComa'''
+	'''Inst_Salida : TkPrint Operacion TkPuntoYComa '''
 	p[0]= Node('PRINT', [p[2]], None)
 
 	
