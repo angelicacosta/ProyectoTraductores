@@ -133,12 +133,12 @@ def p_Inst_Bool(p):
 	'''
 	p[2].changeType('-Guardia: '+str(p[2]))
 	p[4].changeType('-Exito: '+str(p[4]))
-	p[0] = Node('WHILE', [p[2],p[4]], None)
+	p[1] = Node('WHILE', [p[2],p[4]], None)
 	
 
 def p_Inst_For(p):
-	'''Inst_For : TkFor TkId TkFrom Expresion TkTo Expresion TkHacer Lista_Instrucciones TkEnd
-	| TkFor TkId TkFrom Expresion TkTo Expresion TkStep Expresion TkHacer Lista_Instrucciones TkEnd
+	'''Inst_For : TkFor TkId TkFrom Expresion TkTo Expresion TkHacer Inst TkEnd
+	| TkFor TkId TkFrom Expresion TkTo Expresion TkStep Expresion TkHacer Inst TkEnd
 	'''
 	p[2] = Node('Variable de iteracion: (var "'+p[2]+'")', None, None)
 	
@@ -268,7 +268,8 @@ def p_OpCaracter(p):
 #Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
 	'''Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
-	| TkId TkAsignacion Op_Arreglo TkPuntoYComa'''  
+	| TkId TkAsignacion Op_Arreglo TkPuntoYComa
+	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''  
 	
 	p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
 	if (isinstance(p[3].type,int)):
