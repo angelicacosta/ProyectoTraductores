@@ -8,6 +8,7 @@ begin
 		a <- a + 25;
 	otherwise ->
 		a <- a + b;
+		p <- a[2+3];
 	end
 	p.(3+7);
 end

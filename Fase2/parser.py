@@ -137,7 +137,7 @@ def p_Inst_Bool(p):
 	'''
 	p[2].changeType('-Guardia: '+str(p[2]))
 	p[4].changeType('-Exito: '+str(p[4]))
-	p[1] = Node('WHILE', [p[2],p[4]], None)
+	p[0] = Node('WHILE', [p[2],p[4]], None)
 	
 
 def p_Inst_For(p):
@@ -193,7 +193,6 @@ def p_Operacion(p):
 	| Operacion TkDisyuncion Operacion 
 	| TkNegacion Operacion
 	| OpCaracter
-	| Op_Arreglo
 	| TkId  
 	| TkNum
 	| TkTrue 
@@ -256,12 +255,27 @@ def p_Operacion(p):
 			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2])
 
 def p_Op_Arreglo(p):
-	'''Op_Arreglo : TkId TkCorcheteAbre TkId TkCorcheteCierra 
-	| TkId TkCorcheteAbre TkNum TkCorcheteCierra 
-	| TkShift TkId 
-	| TkId TkConca TkId
+	'''Op_Arreglo : Op_Arreglo TkCorcheteAbre Operacion TkCorcheteCierra 
+	| TkShift Op_Arreglo 
+	| Op_Arreglo TkConca Op_Arreglo
+	| TkId
 	'''
-	p[0]=p[1]
+	if (len(p)==2):
+		p[0] = Node('variable ("'+p[1]+'")',None);
+	
+	elif (len(p)==3):
+		p[2].changeType('-arreglo: '+str(p[2]))
+		p[0]=Node("SHIFT",[p[2]])
+
+	elif (len(p)==4):
+			p[1].changeType('-Operando izquierdo: '+str(p[1]))
+			p[3].changeType('-Operando derecho: '+str(p[3]))
+			p[0] = Node("CONCATENACION", [p[1],p[3]])
+	else:
+		p[1].changeType("-Operando izquierdo: "+str(p[1]))
+		p[3].changeType("-Operando derecho: "+str(p[3]))
+		p[0]=Node("INDEXACION",[p[1],p[3]])
+
 
 def p_OpCaracter(p):
 	'''OpCaracter : TkId TkSiguienteCar 
@@ -273,7 +287,8 @@ def p_OpCaracter(p):
 #Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
 	'''Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
-	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''  
+	| TkId TkAsignacion Op_Arreglo TkPuntoYComa
+	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''   
 	
 	p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
 	if (isinstance(p[3].type,int)):
