@@ -193,6 +193,7 @@ def p_Operacion(p):
 	| Operacion TkDisyuncion Operacion 
 	| TkNegacion Operacion
 	| OpCaracter
+	| Op_Arreglo
 	| TkId  
 	| TkNum
 	| TkTrue 
@@ -209,10 +210,13 @@ def p_Operacion(p):
 			p[0] = Node('booleano (FALSE)+', None, None)
 		else:
 			caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
-			if caracter.match(p[1]):
-				p[0] = Node('caracter ('+p[1]+')', None, None)
+			if not isinstance(p[1],Node):
+				if caracter.match(p[1]):
+					p[0] = Node('caracter ('+p[1]+')', None, None)
+				else:
+					p[0] = Node('variable ("'+p[1]+'")', None, None)
 			else:
-				p[0] = Node('variable ("'+p[1]+'")', None, None)
+				p[0]=p[1]
 	
 	elif (len(p) == 3):
 		if (p[2] == '-'):
@@ -287,10 +291,12 @@ def p_OpCaracter(p):
 #Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
 	'''Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
-	| TkId TkAsignacion Op_Arreglo TkPuntoYComa
 	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''   
 	
-	p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
+	if (isinstance(p[1],str)):
+		p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
+	else:
+		p[1].changeType('-Contenedor: '+str(p[1]))
 	if (isinstance(p[3].type,int)):
 		p[3].changeType('-Expresion: literal entero('+str(p[3])+')')
 	else:
