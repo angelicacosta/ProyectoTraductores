@@ -133,12 +133,12 @@ def p_Inst_Bool(p):
 	'''
 	p[2].changeType('-Guardia: '+str(p[2]))
 	p[4].changeType('-Exito: '+str(p[4]))
-	p[1] = Node('WHILE', [p[2],p[4]], None)
+	p[0] = Node('WHILE', [p[2],p[4]], None)
 	
 
 def p_Inst_For(p):
-	'''Inst_For : TkFor TkId TkFrom Expresion TkTo Expresion TkHacer Inst TkEnd
-	| TkFor TkId TkFrom Expresion TkTo Expresion TkStep Expresion TkHacer Inst TkEnd
+	'''Inst_For : TkFor TkId TkFrom Expresion TkTo Expresion TkHacer Lista_Instrucciones TkEnd
+	| TkFor TkId TkFrom Expresion TkTo Expresion TkStep Expresion TkHacer Lista_Instrucciones TkEnd
 	'''
 	p[2] = Node('Variable de iteracion: (var "'+p[2]+'")', None, None)
 	
