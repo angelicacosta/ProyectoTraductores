@@ -151,38 +151,22 @@ def p_Inst_Bool(p):
 	
 
 def p_Inst_For(p):
-	'''Inst_For : TkFor TkId TkFrom Expresion TkTo Expresion TkHacer Inst TkEnd
-	| TkFor TkId TkFrom Expresion TkTo Expresion TkStep Expresion TkHacer Inst TkEnd
+	'''Inst_For : TkFor TkId TkFrom Operacion TkTo Operacion TkHacer Inst TkEnd
+	| TkFor TkId TkFrom Operacion TkTo Operacion TkStep Operacion TkHacer Inst TkEnd
 	'''
 	p[2] = Node('Variable de iteracion: (var "'+p[2]+'")', None, None)
 	
-	if isinstance(p[4],int):
-		p[4] = Node('-Limite inferior: literal entero ('+str(p[4])+')', None, None)
-	else:
-		p[4]= Node('-Limite inferior: variable ("'+p[4]+'")', None, None)
+	p[4].changeType('-Limite inferior: '+str(p[4]))
 	
-	if isinstance(p[6],int):
-		p[6] = Node('-Limite superior: literal entero ('+str(p[6])+')', None, None)
-	else:
-		p[6] = Node('-Limite superior: variable ("'+p[6]+'")', None, None)
-
+	p[6].changeType('-Limite superior: '+str(p[6]))
 
 	if (len(p)==10):
 		p[8].changeType('-Exito: '+str(p[8]))
 		p[0]= Node('ITERACION DETERMINADA', [p[2],p[4],p[6],p[8]], None )
 	else:
-		if isinstance(p[8],int):
-			p[8].changeType('-Step: literal entero ('+str(p[8])+')')
-		else:
-			p[8].changeType('-Step: variable ("'+str(p[8])+'")')
-		p[10].changeType('-Exito:'+str(p[10]))
+		p[8].changeType('-Step: '+str(p[8]))
+		p[10].changeType('-Exito: '+str(p[10]))
 		p[0]= Node('ITERACION DETERMINADA', [p[2], p[4], p[6], p[8], p[10]], None )
-
-def p_Expresion(p):
-	'''Expresion : TkNum
-	| TkId'''
-	
-	p[0]=p[1]
 
 
 def p_Operacion(p):
