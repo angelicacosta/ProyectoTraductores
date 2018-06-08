@@ -102,7 +102,8 @@ La gramatica que construimos para el BasicTran consiste en:
 	Inst_Entrada : TkRead TkId TkPuntoYComa 
 
 Observaciones: 
-- Se trabajo con todas las operaciones booleanas, relacionales, aritmeticas, de caracteres y arreglos en una sola regla.
-Esto debido a que varias instrucciones hacian uso de eso.
+- Se trabajo con todas las operaciones booleanas, relacionales, aritmeticas, de caracteres y arreglos en una sola regla. Esto debido a que varias instrucciones hacian uso de eso.
+- Para el creacion del árbol se uso una clase Node, que tiene las funciones: changeType, getType, addChildren,  las cuales facilitaron el manejo de la impresion de dicho árbol por la terminal.
+- Se considera el orden de precedencia de los tokens y el sentido a donde asocian.
 
 
