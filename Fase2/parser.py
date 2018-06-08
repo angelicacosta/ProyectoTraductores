@@ -3,12 +3,13 @@ import ply.yacc as yacc
 import ply.lex as lex
 import sys
 import re
-from Entrega1 import tokens, obtenerColumna
+from Entrega1 import tokens, obtenerColumna, lexerErrorFound
+
+parserErrorFound=False
 
 precedence = (
 	('left', 'TkSuma', 'TkResta'),
 	('left', 'TkMult', 'TkDiv','TkMod'),
-	#('right', 'UMINUS'),
 	('left', 'TkDisyuncion'),
 	('right', 'TkConjuncion'),
 	('right', 'TkNegacion'),
@@ -21,7 +22,6 @@ precedence = (
 	('nonassoc', 'TkMenor', 'TkMenorIgual','TkMayor','TkMayorIgual','TkIgual','TkDesigual'),
 	('left', 'TkParAbre','TkParCierra'),
 	('left', 'TkHacer')
-	#('right', 'UMINUS'),
 )
 
 class Node:
@@ -308,8 +308,10 @@ def p_Inst_Entrada(p):
 
 
 #Error rule for syntax errors
-#def p_error(p):
-#	print ("Error de sintaxis en la linea")
+def p_error(p):
+	global parserErrorFound
+	parserErrorFound = True
+	print('Error de sintaxis en la linea: ' + str(p.lineno-1) + ', columna: '+str(obtenerColumna(p.lexer.lexdata,p))+', token inesperado: ' + str(p.type))
 
 def printTree(nodo, tabs):
 	print('\t'*tabs + str(nodo))
@@ -331,7 +333,8 @@ def main():
 	# Se abre el archivo con permisos de lectura
 	string = str(open(str(sys.argv[1]),'r').read())
 	result = parser.parse(string)
-
-	printTree(result, 0)
+	
+	if (not lexerErrorFound) and (not parserErrorFound):
+		printTree(result, 0)
 
 main()

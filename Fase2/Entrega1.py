@@ -29,7 +29,7 @@ reservadas = {
 	'print'		: 'TkPrint'
 }
 
-errorFound = False
+lexerErrorFound = False
 
 # Lista de tokens y se concatena el diccionario
 tokens = ['TkNum', 'TkId', 'TkCaracter','TkComa', 'TkPuntoYComa', 'TkPunto', 'TkDosPuntos', 'TkParAbre', 
@@ -73,8 +73,8 @@ t_TkShift = r'\$'
 
 # Regla que maneja los errores
 def t_error(t):
-	global errorFound
-	errorFound = True
+	global lexerErrorFound
+	lexerErrorFound = True
 	print('Error: Caracter inesperado "' + t.value[0] + '" en la fila ' + str(t.lineno) + ", columna " + str(obtenerColumna(t.lexer.lexdata,t))) 
 	t.lexer.skip(1)
 
@@ -110,48 +110,3 @@ def t_TkCaracter(t):
 	return t
 
 lexer = lex.lex()
-
-'''
-def main():
-  
-	# Se abre el archivo con permisos de lectura
-	data = str(open(str(sys.argv[1]),'r').read())
-  
-	# Construyedo el lexer.
-	lexer = lex.lex()
-
-	# Pasandole al lexer la data (input)
-	lexer.input(data)
-
-	salida=""
-	filaAnterior = -1
-	while True:
-		tok = lexer.token()
-		if not tok:
-			break
-		if(str(tok.type)=='TkSalto'):
-			filaAnterior = filaActual
-			pass
-
-		else:
-			filaActual = tok.lineno
-			if filaAnterior != filaActual and filaAnterior != -1:
-				salida += ', \n'
-
-			elif filaAnterior == filaActual:
-				salida += ', '
-
-			salida = salida + str(tok.type)
-
-			if (str(tok.type) == "TkId"):
-				salida += "(\""+ str(tok.value) + "\")"
-
-			salida += " " +str(tok.lineno) +" " + str(obtenerColumna(lexer.lexdata,tok))
-
-			filaAnterior = filaActual
-
-	if not errorFound:
-		print(salida) 
-
-main()
-'''
