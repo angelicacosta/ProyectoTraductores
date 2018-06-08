@@ -19,9 +19,9 @@ precedence = (
 	('right', 'TkNegacion'),
 	('left','TkSiguienteCar'),
 	('left', 'TkAnteriorCar'), 
-	('left', 'TkValorAscii'),
+	('right', 'TkValorAscii'),
 	('left','TkConca'),
-	('left','TkShift'),
+	('right','TkShift'),
 	('left', 'TkCorcheteAbre', 'TkCorcheteCierra'),
 	('nonassoc', 'TkMenor', 'TkMenorIgual','TkMayor','TkMayorIgual','TkIgual','TkDesigual'),
 	('left', 'TkParAbre','TkParCierra'),
@@ -369,7 +369,7 @@ def p_Inst_Entrada(p):
 def p_error(p):
 	global parserErrorFound
 	parserErrorFound = True
-	print('Error de sintaxis en la linea: ' + str(p.lineno-1) + ', columna: '+str(obtenerColumna(p.lexer.lexdata,p))+', token inesperado: ' + str(p.type))
+	print('Error de sintaxis en la linea: ' + str(p.lineno) + ', columna: '+str(obtenerColumna(p.lexer.lexdata,p))+', token inesperado: ' + str(p.type))
 	exit()
 
 # Funcion que recorre el arbol y lo imprime. 
