@@ -8,7 +8,6 @@ Fase 2:
 El programa se ejecuta con el archivo BasicTran brindado en la entrega, con el comando:
 ./BasicTran ⟨Archivo⟩
 
-
 La gramatica que construimos para el BasicTran consiste en:
 
 	S : TkWith Lista_Declaraciones Bloque_Inst 
@@ -77,9 +76,14 @@ La gramatica que construimos para el BasicTran consiste en:
 	| TkFalse
 	| TkCaracter
 
-	Op_Arreglo : TkId TkCorcheteAbre Operacion TkCorcheteCierra 
+	Op_Arreglo : TkId TkCorcheteAbre Operacion TkCorcheteCierra
 	| TkShift TkId 
 	| TkId TkConca TkId
+	| Op_Arreglo TkCorcheteAbre Operacion TkCorcheteCierra
+	| TkShift Op_Arreglo 
+	| Op_Arreglo TkConca TkId
+	| Op_Arreglo TkConca Op_Arreglo
+	| TkId TkConca Op_Arreglo
 
 	OpCaracter : TkCaracter TkSiguienteCar 
 	| TkCaracter TkAnteriorCar 

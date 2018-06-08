@@ -18,4 +18,5 @@ begin
 		p <- a[2+3];
 	end
 	p.(3+7);
+	a <- $$a::b::c;
 end

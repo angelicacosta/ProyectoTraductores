@@ -252,11 +252,43 @@ def p_Operacion(p):
 			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2])
 
 def p_Op_Arreglo(p):
-	'''Op_Arreglo : TkId TkCorcheteAbre Operacion TkCorcheteCierra 
+	'''Op_Arreglo : TkId TkCorcheteAbre Operacion TkCorcheteCierra
 	| TkShift TkId 
 	| TkId TkConca TkId
+	| Op_Arreglo TkCorcheteAbre Operacion TkCorcheteCierra
+	| TkShift Op_Arreglo 
+	| Op_Arreglo TkConca TkId
+	| Op_Arreglo TkConca Op_Arreglo
+	| TkId TkConca Op_Arreglo
 	'''
-	p[0]=p[1]
+	if (len(p)==5):
+		p[3].changeType("-Index: "+str(p[3]))
+		if isinstance(p[1],str):
+			p[1] = Node("-Arreglo: "+p[1])
+		else:
+			p[1].changeType("-Arreglo: "+str(p[1]))
+		p[0] = Node("INDEXACION", [p[1],p[3]])
+	
+	elif (len(p)==3):
+		if isinstance(p[2],str):
+			p[2] = Node("-Arreglo: "+p[2])
+		else:
+			p[2].changeType("-Arreglo: "+str(p[2]))
+		p[0] = Node("SHIFT", [p[2]])
+	
+	else:
+		if isinstance(p[1],str):
+			p[1] = Node("-Arreglo izquierdo: "+p[1])
+		else:
+			p[1].changeType("-Arreglo izquierdo: "+str(p[1]))
+		if isinstance(p[3],str):
+			p[3] = Node("-Arreglo derecho: "+p[3])
+		else:
+			p[3].changeType("-Arreglo derecho: "+str(p[3]))
+		
+		p[0] = Node("CONCATENACION", [p[1],p[3]])
+
+
 
 def p_OpCaracter(p):
 	'''OpCaracter : TkCaracter TkSiguienteCar 
@@ -328,7 +360,7 @@ def main():
 		return -1
 		
 	# Construyendo el parser
-	parser = yacc.yacc()
+	parser = yacc.yacc(errorlog=yacc.NullLogger())
 		
 	# Se abre el archivo con permisos de lectura
 	string = str(open(str(sys.argv[1]),'r').read())
