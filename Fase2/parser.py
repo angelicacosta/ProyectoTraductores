@@ -297,24 +297,33 @@ def p_OpCaracter(p):
 	| TkId TkSiguienteCar 
 	| TkId TkAnteriorCar 
 	| TkValorAscii TkId
+	| OpCaracter TkSiguienteCar 
+	| OpCaracter TkAnteriorCar 
+	| TkValorAscii OpCaracter
 	'''
 	caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
 	if (p[1]=='#'):
-		if caracter.match(p[2]):
-			p[0] = Node('VALOR ASCII',[Node('-Caracter: '+str(p[2]))])
+		if isinstance(p[2],Node):
+			p[2].changeType('-Caracter: '+str(p[2]))
+		elif caracter.match(p[2]):
+			p[2] = Node('-Caracter: '+str(p[2]))
 		else:
-			p[0] = Node('VALOR ASCII',[Node('-Variable: '+str(p[2]))])
+			p[2] = Node('-Variable: '+str(p[2]))
+		p[0] = Node('VALOR ASCII',[p[2]])
+	
 	else:
-		if (p[2]=='[+][+]'):
-			if caracter.match(p[1]):
-				p[0] = Node('CARACTER SIGUIENTE',[Node('-Caracter: '+str(p[1]))])
-			else:
-				p[0] = Node('CARACTER SIGUIENTE',[Node('-Variable: '+str(p[1]))])
+		if isinstance(p[1],Node):
+			p[1].changeType('-Caracter: '+str(p[1]))
+		elif caracter.match(p[1]):
+			p[1] = Node('-Caracter: '+str(p[1]))
 		else:
-			if caracter.match(p[1]):
-				p[0] = Node('CARACTER SIGUIENTE',[Node('-Caracter: '+str(p[1]))])
-			else:
-				p[0] = Node('CARACTER SIGUIENTE',[Node('-Variable: '+str(p[1]))])	
+			p[1] = Node('-Variable: '+str(p[1]))
+		
+		if (p[2]=='[+][+]'):
+			p[0] = Node('CARACTER SIGUIENTE',[p[1]])
+		else:
+			p[0] = Node('CARACTER ANTERIOR',[p[1]])
+				
 
 
 #Regla de la gramatica utilizada para reconocer una asignacion

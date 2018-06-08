@@ -85,12 +85,14 @@ La gramatica que construimos para el BasicTran consiste en:
 	| Op_Arreglo TkConca Op_Arreglo
 	| TkId TkConca Op_Arreglo
 
-	OpCaracter : TkCaracter TkSiguienteCar 
-	| TkCaracter TkAnteriorCar 
+	OpCaracter : | TkCaracter TkAnteriorCar 
 	| TkValorAscii TkCaracter
 	| TkId TkSiguienteCar 
 	| TkId TkAnteriorCar 
 	| TkValorAscii TkId
+	| OpCaracter TkSiguienteCar 
+	| OpCaracter TkAnteriorCar 
+	| TkValorAscii OpCaracter
 
 	Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
 	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa
