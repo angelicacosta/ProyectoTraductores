@@ -1,3 +1,6 @@
+# Autores:
+# Giulianne Tavano. 13-11389
+# Angelica Acosta. 14-10005
 
 import ply.yacc as yacc
 import ply.lex as lex
@@ -7,6 +10,7 @@ from Entrega1 import tokens, obtenerColumna, lexerErrorFound
 
 parserErrorFound=False
 
+# Indica cuales son el orden de precedencia de los tokens y hacia donde asocian.
 precedence = (
 	('left', 'TkSuma', 'TkResta'),
 	('left', 'TkMult', 'TkDiv','TkMod'),
@@ -24,6 +28,7 @@ precedence = (
 	('left', 'TkHacer')
 )
 
+# Clase node que permite la creacion de los nodel del arbol sintactico.
 class Node:
 	def __init__(self,type,children=None,leaf=None):
 		self.type = type
@@ -35,25 +40,29 @@ class Node:
 	def __str__(self):
 		return str(self.type)
 
+	#Cambia el type del nodo.
 	def changeType(self,newType):
 		self.type = newType
 
+	#Obtiene el type del nodo.
 	def getType(self):
 		return self.type
 
+	#Agrega hijos a un nodo.
 	def addChildren(self,newChildren):
 		self.children = [newChildren] + self.children
 
+# Regla inicial de la gramatica
 def p_S(p):
 	''' S : TkWith Lista_Declaraciones Bloque_Inst 
 	| Bloque_Inst
 	'''
 	if (p[1]=='with'):
 		p[0] = p[3]
-		pass
 	else: 
 		p[0] =  p[1]
 
+# Regla de la gramatica que reconoce todas las declaracios de variables.
 def p_Lista_Declaraciones(p):
 	'''Lista_Declaraciones : TkVar Lista_Variables Lista_Declaraciones 
 	| TkVar Lista_Variables '''
@@ -63,6 +72,7 @@ def p_Lista_Declaraciones(p):
 	else:
 		p[0] = p[2]
 
+# Regla de la gramatica que reconoce toda la lista de variables.
 def p_Lista_Variables(p):
 	''' Lista_Variables : TkId TkComa Lista_Variables 
 	| TkId TkAsignacion Operacion TkComa Lista_Variables
@@ -73,6 +83,7 @@ def p_Lista_Variables(p):
 	else:
 		p[0]= str(p[1]) +'\n' + str(p[3])   
 
+# Regla de la gramatica que reconoce todo los tipos de variables.
 def p_Tipo(p):
 	''' Tipo : TkInt 
 	| TkBool 
@@ -85,6 +96,7 @@ def p_Tipo(p):
 	else: 
 		p[0]=p[1]
 
+# Regla de la gramatica que reconoce los bloques de instrucciones.
 def p_Bloque_Inst(p):	
 	'''Bloque_Inst : TkBegin Lista_Instrucciones TkEnd 
 	| TkBegin TkEnd 
@@ -94,6 +106,7 @@ def p_Bloque_Inst(p):
 	else:
 		p[0] = p[1] + p[2]
 
+# Regla de la gramatica que reconoce tiene todas las opciones de instrucciones.
 def p_Inst(p):
 	'''Inst : Inst_Asignacion 
 	| Inst_If 
@@ -106,6 +119,7 @@ def p_Inst(p):
 	'''
 	p[0] = p[1]
 
+# Regla de la gramatica que reconoce todas instrucciones con puntos.
 def p_Inst_Punto(p):
 	'''Inst_Punto : TkId TkPunto Operacion TkPuntoYComa '''
 	if (isinstance(p[3],int)):
@@ -114,6 +128,7 @@ def p_Inst_Punto(p):
 		p[3].changeType('-Expresion: '+str(p[3]))
 		p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1]),p[3]])
 
+# Regla de la gramatica que reconoce todas instrucciones.
 def p_Lista_Instrucciones(p):
 	'''Lista_Instrucciones : Inst 
 	|  Inst Lista_Instrucciones'''
@@ -127,7 +142,7 @@ def p_Lista_Instrucciones(p):
 	else:
 		p[0] = p[1]
 	  
-
+# Regla de la gramatica que reconoce todas instrucciones de los condicionales
 def p_Inst_If(p):
 	'''Inst_If : TkIf Operacion TkHacer Lista_Instrucciones TkEnd
 	| TkIf Operacion TkHacer Lista_Instrucciones TkOtherwise TkHacer Lista_Instrucciones TkEnd
@@ -138,10 +153,10 @@ def p_Inst_If(p):
 	if (len(p)==6):
 		p[0] = Node('CONDICIONAL', [p[2],p[4]], None)
 	else:
-		p[7].changeType('-En otro caso: '+str(p[7]))
+		p[7].changeType('-Fracaso: '+str(p[7]))
 		p[0] = Node('CONDICIONAL', [p[2],p[4],p[7]], None)
 
-
+# Regla de la gramatica que reconoce todas instrucciones de ciclos o while.
 def p_Inst_Bool(p):
 	'''Inst_Bool : TkWhile Operacion TkHacer Lista_Instrucciones TkEnd
 	'''
@@ -149,7 +164,7 @@ def p_Inst_Bool(p):
 	p[4].changeType('-Exito: '+str(p[4]))
 	p[0] = Node('CICLO', [p[2],p[4]], None)
 	
-
+# Regla de la gramatica que reconoce todas instrucciones de iteracion determinada (For).
 def p_Inst_For(p):
 	'''Inst_For : TkFor TkId TkFrom Operacion TkTo Operacion TkHacer Inst TkEnd
 	| TkFor TkId TkFrom Operacion TkTo Operacion TkStep Operacion TkHacer Inst TkEnd
@@ -168,7 +183,7 @@ def p_Inst_For(p):
 		p[10].changeType('-Exito: '+str(p[10]))
 		p[0]= Node('ITERACION DETERMINADA', [p[2], p[4], p[6], p[8], p[10]], None )
 
-
+# Regla de la gramatica que reconoce todas las operaciones del lenguaje.
 def p_Operacion(p):
 	'''Operacion : TkParAbre Operacion TkParCierra
 	| Operacion TkSuma Operacion 
@@ -251,6 +266,7 @@ def p_Operacion(p):
 		elif (p[2] == '\/'):
 			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2])
 
+# Regla de la gramatica que reconoce todas las operaciones de los arreglos.
 def p_Op_Arreglo(p):
 	'''Op_Arreglo : TkId TkCorcheteAbre Operacion TkCorcheteCierra
 	| TkShift TkId 
@@ -289,7 +305,7 @@ def p_Op_Arreglo(p):
 		p[0] = Node("CONCATENACION", [p[1],p[3]])
 
 
-
+# Regla de la gramatica que reconoce todas las operaciones con los caracteres.
 def p_OpCaracter(p):
 	'''OpCaracter : TkCaracter TkSiguienteCar 
 	| TkCaracter TkAnteriorCar 
@@ -326,7 +342,7 @@ def p_OpCaracter(p):
 				
 
 
-#Regla de la gramatica utilizada para reconocer una asignacion
+# Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
 	'''Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
 	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''  
@@ -338,23 +354,25 @@ def p_Inst_Asignacion(p):
 		p[3].changeType('-Expresion: '+str(p[3]))
 	p[0] = Node('ASIGNACION', [p[1], p[3]], None)
 
+# Regla de la gramatica que reconoce los print
 def p_Inst_Salida(p):
 	'''Inst_Salida : TkPrint Operacion TkPuntoYComa '''
 	p[0]= Node('PRINT', [p[2]], None)
 
-	
+# Regla de la gramatica que reconoce los read	
 def p_Inst_Entrada(p):
 	'''Inst_Entrada : TkRead TkId TkPuntoYComa '''
 	p[0]= Node('READ', [p[2]], None)
 
 
-#Error rule for syntax errors
+#Regla de los errores sintacticos
 def p_error(p):
 	global parserErrorFound
 	parserErrorFound = True
 	print('Error de sintaxis en la linea: ' + str(p.lineno-1) + ', columna: '+str(obtenerColumna(p.lexer.lexdata,p))+', token inesperado: ' + str(p.type))
 	exit()
 
+# Funcion que recorre el arbol y lo imprime. 
 def printTree(nodo, tabs):
 	print('\t'*tabs + str(nodo))
 	if not (isinstance(nodo, Node)):
@@ -376,7 +394,9 @@ def main():
 	string = str(open(str(sys.argv[1]),'r').read())
 	result = parser.parse(string)
 	
+	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound):
 		printTree(result, 0)
 
+#Llamada a la funcion
 main()
