@@ -353,6 +353,7 @@ def p_error(p):
 	global parserErrorFound
 	parserErrorFound = True
 	print('Error de sintaxis en la linea: ' + str(p.lineno-1) + ', columna: '+str(obtenerColumna(p.lexer.lexdata,p))+', token inesperado: ' + str(p.type))
+	exit()
 
 def printTree(nodo, tabs):
 	print('\t'*tabs + str(nodo))
