@@ -1,0 +1,2 @@
+#!/bin/bash
+if [ "$#" -ne 1 ] ; then echo "Debe colocar: ./BasicTran <nombreArchivo>" ; else python3 parser.py $1 ; fi

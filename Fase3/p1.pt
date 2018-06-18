@@ -1,0 +1,22 @@
+with 
+	var p: int
+begin 
+	while (b < 3 /\ True) ->
+		i <- 34 * 2 + 5;
+		with
+			var a, b <- 5 : int
+		begin
+			for a from 0 to n-1 step 3 ->
+				a.1;
+			end
+		end
+	end	
+	if a ->
+		a <- a + 25;
+	otherwise ->
+		a <- a + b;
+		p <- a[2+3];
+	end
+	p.(3+7);
+end
+**

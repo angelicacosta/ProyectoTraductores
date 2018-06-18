@@ -1,0 +1,16 @@
+with
+	var n, f1 <- 1, f2 <- 0 : int
+begin
+	read n;
+	while n > 0 ->
+		with
+			var tmp : int
+			begin
+				tmp <- f2;
+				f2 <- f1;
+				f1 <- f1 + tmp;
+				n <- n - 1;
+			end
+		end
+	print f2;
+end
