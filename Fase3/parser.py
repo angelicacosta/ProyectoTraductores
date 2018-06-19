@@ -19,7 +19,7 @@ precedence = (
 	('left', 'TkSuma', 'TkResta'),
 	('left', 'TkMult', 'TkDiv','TkMod'),
 	('left', 'TkDisyuncion'),
-	('right', 'TkConjuncion'),
+	('left', 'TkConjuncion'),
 	('right', 'TkNegacion'),
 	('left','TkSiguienteCar'),
 	('left', 'TkAnteriorCar'), 
@@ -115,8 +115,8 @@ def p_Tipo(p):
 	''' Tipo : TkInt 
 	| TkBool 
 	| TkChar
-	| TkArray  TkCorcheteAbre TkId TkCorcheteCierra TkOf TkId 
-	| TkArray  TkCorcheteAbre TkNum TkCorcheteCierra TkOf TkId 
+	| TkArray TkCorcheteAbre OpAritmetica TkCorcheteCierra TkOf Tipo 
+	| TkArray TkCorcheteAbre OpAritmetica TkCorcheteCierra TkOf TkId
 	'''
 	if (p[1]=='array'):
 		p[0] = Node(p[1], [p[2],p[3],p[4],p[6]], p[5])
@@ -210,62 +210,44 @@ def p_Inst_For(p):
 		p[10].changeType('-Exito: '+str(p[10]))
 		p[0]= Node('ITERACION DETERMINADA', [p[2], p[4], p[6], p[8], p[10]], None )
 
+
 # Regla de la gramatica que reconoce todas las operaciones del lenguaje.
 def p_Operacion(p):
-	'''Operacion : TkParAbre Operacion TkParCierra
-	| Operacion TkSuma Operacion 
-	| Operacion TkResta Operacion 
-	| Operacion TkMult Operacion 
-	| Operacion TkDiv Operacion 
-	| Operacion TkMod Operacion 
-	| TkResta Operacion 
-	| Operacion TkMenor Operacion
-	| Operacion TkMenorIgual Operacion 
-	| Operacion TkMayor Operacion 
-	| Operacion TkMayorIgual Operacion 
-	| Operacion TkIgual Operacion 
-	| Operacion TkDesigual Operacion
-	| Operacion TkConjuncion Operacion
-	| Operacion TkDisyuncion Operacion 
-	| TkNegacion Operacion
+	'''Operacion : OpAritmetica
+	| OpRelacional
+	| OpBoolena
 	| OpCaracter
 	| Op_Arreglo
+	'''
+	p[0] = p[1]
+
+def p_OpAritmetica(p):
+	'''OpAritmetica : TkParAbre OpAritmetica TkParCierra
+	| OpAritmetica TkSuma OpAritmetica 
+	| OpAritmetica TkResta OpAritmetica 
+	| OpAritmetica TkMult OpAritmetica 
+	| OpAritmetica TkDiv OpAritmetica 
+	| OpAritmetica TkMod OpAritmetica 
+	| TkResta OpAritmetica 
 	| TkId  
 	| TkNum
-	| TkTrue 
-	| TkFalse
-	| TkCaracter
 	'''
-	
 	if (len(p) == 2):
 		if isinstance(p[1],int):
 			p[0] = Node('literal entero ('+str(p[1])+')', None, None)
-		elif (p[1] == 'true'):
-			p[0] = Node('booleano (TRUE)+', None, None)
-		elif (p[1] == 'false'):
-			p[0] = Node('booleano (FALSE)+', None, None)
-		elif isinstance(p[1],Node):
-			p[0] = p[1]
 		else:
-			caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
-			if caracter.match(p[1]):
-				p[0] = Node('caracter ('+p[1]+')', None, None)
-			else:
-				p[0] = Node('variable ("'+p[1]+'")', None, None)
+			p[0] = Node('variable ("'+p[1]+'")', None, None)
 	
 	elif (len(p) == 3):
-		if (p[1] == '-'):
-			p[0]=Node("MENOS UNARIO",  [p[2]], None)
-		else:
-			p[0]=Node("NOT",  [p[2]], None)
-	
+		p[0]=Node("MENOS UNARIO",  [p[2]], None)
+
 	else:
 		if not (p[1]=='('):
 			p[1].changeType('-Operando izquierdo: '+str(p[1]))
 			p[3].changeType('-Operando derecho: '+str(p[3]))
 		else:
 			p[0] = p[2]
-
+		
 		if (p[2] == '+'):
 			p[0] = Node("SUMA", [p[1],p[3]], p[2])
 		elif (p[2] == '-'):
@@ -276,7 +258,29 @@ def p_Operacion(p):
 			p[0] = Node("DIVISION", [p[1],p[3]], p[2])
 		elif (p[2] == '%'):
 			p[0] = Node("MODULO", [p[1],p[3]], p[2])
-		elif (p[2] == '<'):
+
+
+def p_OpRelacional(p):
+	'''OpRelacional : TkParAbre OpRelacional TkParCierra
+	| OpRelacional TkMenor OpRelacional
+	| OpRelacional TkMenorIgual OpRelacional 
+	| OpRelacional TkMayor OpRelacional 
+	| OpRelacional TkMayorIgual OpRelacional 
+	| OpRelacional TkIgual OpRelacional 
+	| OpRelacional TkDesigual OpRelacional
+	| OpAritmetica
+	'''
+	if (len(p) == 2):
+		p[0] = p[1]
+	
+	else:
+		if not (p[1]=='('):
+			p[1].changeType('-Operando izquierdo: '+str(p[1]))
+			p[3].changeType('-Operando derecho: '+str(p[3]))
+		else:
+			p[0] = p[2]
+		
+		if (p[2] == '<'):
 			p[0]=Node("MENOR QUE", [p[1],p[3]], p[2])
 		elif (p[2] == '<='):
 			p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2])
@@ -288,7 +292,36 @@ def p_Operacion(p):
 			p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2])
 		elif (p[2] == '/='):
 			p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2])
-		elif (p[2] == '/\\'):
+
+def p_OpBoolena(p):
+	'''OpBoolena : TkParAbre OpBoolena TkParCierra
+	| OpBoolena TkConjuncion OpBoolena
+	| OpBoolena TkDisyuncion OpBoolena 
+	| TkNegacion OpBoolena  
+	| TkTrue 
+	| TkFalse
+	| OpRelacional
+	'''
+
+	if (len(p) == 2):
+		if isinstance(p[1],Node):
+			p[0] = p[1]
+		elif (p[1] == 'true'):
+			p[0] = Node('booleano (TRUE)', None, None)
+		elif (p[1] == 'false'):
+			p[0] = Node('booleano (FALSE)', None, None)
+	
+	elif (len(p) == 3):
+		p[0]=Node("NOT",  [p[2]], None)
+
+	else:
+		if not (p[1]=='('):
+			p[1].changeType('-Operando izquierdo: '+str(p[1]))
+			p[3].changeType('-Operando derecho: '+str(p[3]))
+		else:
+			p[0] = p[2]
+		
+		if (p[2] == '/\\'):
 			p[0]=Node("CONJUNCION", [p[1],p[3]], p[2])
 		elif (p[2] == '\/'):
 			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2])
@@ -334,38 +367,31 @@ def p_Op_Arreglo(p):
 
 # Regla de la gramatica que reconoce todas las operaciones con los caracteres.
 def p_OpCaracter(p):
-	'''OpCaracter : TkCaracter TkSiguienteCar 
-	| TkCaracter TkAnteriorCar 
-	| TkValorAscii TkCaracter
-	| TkId TkSiguienteCar 
-	| TkId TkAnteriorCar 
-	| TkValorAscii TkId
+	'''OpCaracter : TkParAbre OpCaracter TkParCierra
 	| OpCaracter TkSiguienteCar 
 	| OpCaracter TkAnteriorCar 
 	| TkValorAscii OpCaracter
+	| TkCaracter
+	| TkId
 	'''
-	caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
-	if (p[1]=='#'):
-		if isinstance(p[2],Node):
-			p[2].changeType('-Caracter: '+str(p[2]))
-		elif caracter.match(p[2]):
-			p[2] = Node('-Caracter: '+str(p[2]))
-		else:
-			p[2] = Node('-Variable: '+str(p[2]))
-		p[0] = Node('VALOR ASCII',[p[2]])
-	
-	else:
-		if isinstance(p[1],Node):
-			p[1].changeType('-Caracter: '+str(p[1]))
-		elif caracter.match(p[1]):
+
+	if (len(p)==2):
+		caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
+		if caracter.match(p[1]):
 			p[1] = Node('-Caracter: '+str(p[1]))
 		else:
 			p[1] = Node('-Variable: '+str(p[1]))
-		
-		if (p[2]=='[+][+]'):
+
+	elif (len(p)==3):
+		if (p[1]=='#'):
+			p[0] = Node('VALOR ASCII',[p[2]])
+		elif (p[2]=='[+][+]'):
 			p[0] = Node('CARACTER SIGUIENTE',[p[1]])
 		else:
 			p[0] = Node('CARACTER ANTERIOR',[p[1]])
+	
+	else:
+		p[0] = p[2]
 				
 
 
@@ -424,7 +450,7 @@ def main():
 	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound) and (not RedeclaracionError):
 		printTree(result, 0)
-		print(tablaPrincipal)
+		#print(tablaPrincipal)
 
 #Llamada a la funcion
 main()
