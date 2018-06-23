@@ -7,9 +7,13 @@ import ply.lex as lex
 import sys
 import re
 from Entrega1 import tokens, obtenerColumna, lexerErrorFound
+from hash_table import *
 
 parserErrorFound=False
 semanticErrorFound=False
+redeclarationError=False
+#tablasSimbolos=Cola()
+tabla = HashTable(10)
 
 # Indica cuales son el orden de precedencia de los tokens y hacia donde asocian.
 precedence = (
@@ -86,10 +90,21 @@ def p_Lista_Variables(p):
 	| TkId TkAsignacion Operacion TkComa Lista_Variables
 	| TkId TkAsignacion Operacion TkDosPuntos Tipo
 	| TkId TkDosPuntos Tipo '''
+	global redeclarationError
 	if (len(p)==6):
-		p[0]= str(Node(p[2], [p[1], p[3]], None, None)) + ' '+ str(p[5])
+		#p[0]= str(Node(p[2], [p[1], p[3]], None, None)) + ' '+ str(p[5])
+		p[0]=Node(str(Node(p[2], [p[1], p[3]], None, None)) + ' '+ str(p[5]), None,None, p[5].getTipo())
+		if (p[4]==':'):
+			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[5]))
+		else:
+			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[5].getTipo()))
 	else:
-		p[0]= str(p[1]) +'\n' + str(p[3])   
+		#p[0]= str(p[1]) +'\n' + str(p[3])  
+		p[0]=Node(str(p[1]) +'\n' + str(p[3]), None,None, p[3].getTipo())
+		if(p[2]==':'):
+			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[3]))
+		else:
+			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[3].getTipo()))
 
 # Regla de la gramatica que reconoce todo los tipos de variables.
 def p_Tipo(p):
@@ -412,8 +427,10 @@ def main():
 	result = parser.parse(string)
 	
 	#Si no hay errores, imprime el arbol.
-	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
+	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound) and (not redeclarationError):
 		printTree(result, 0)
+		#print(tablasSimbolos)
+		print(tabla)
 
 #Llamada a la funcion
 main()

@@ -1,0 +1,8 @@
+with 
+	var p, v : int
+	var t <- 4, m : bool
+	var c , g : char
+	var q : array [2] of array [4] of int 
+begin
+	p <- 4 + 'a';
+end
