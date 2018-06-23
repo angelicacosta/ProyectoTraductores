@@ -26,7 +26,8 @@ reservadas = {
 	'while'   	: 'TkWhile',
 	'true'    	: 'TkTrue',
 	'false'  	: 'TkFalse', 
-	'print'		: 'TkPrint'
+	'print'		: 'TkPrint', 
+	'not'		: 'TkNegacion'
 }
 
 lexerErrorFound = False
@@ -34,7 +35,7 @@ lexerErrorFound = False
 # Lista de tokens y se concatena el diccionario
 tokens = ['TkNum', 'TkId', 'TkCaracter','TkComa', 'TkPuntoYComa', 'TkPunto', 'TkDosPuntos', 'TkParAbre', 
 		'TkParCierra', 'TkCorcheteAbre', 'TkCorcheteCierra', 'TkHacer', 'TkAsignacion', 'TkSuma',
-		'TkResta','TkMult', 'TkDiv', 'TkMod', 'TkConjuncion', 'TkDisyuncion', 'TkNegacion', 'TkMenor',
+		'TkResta','TkMult', 'TkDiv', 'TkMod', 'TkConjuncion', 'TkDisyuncion',  'TkMenor',
 		'TkMenorIgual', 'TkMayor', 'TkMayorIgual', 'TkShift', 'TkIgual', 'TkDesigual', 'TkSiguienteCar',
 		'TkAnteriorCar', 'TkValorAscii', 'TkConca', 'TkSalto'] + list(reservadas.values())
 		  
@@ -58,7 +59,6 @@ t_TkDiv =r'/'
 t_TkMod = r'\%'
 t_TkConjuncion= r'/\\'
 t_TkDisyuncion = r'\\\/'
-t_TkNegacion = r'not'
 t_TkMenor = r'<'
 t_TkMenorIgual = r'<='
 t_TkMayor = r'>'
