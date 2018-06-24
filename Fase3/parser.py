@@ -137,16 +137,11 @@ def p_Tipo(p):
 	'''
 	global lista, actualLevel
 	if (p[1]=='array'):
-		p[0] = Node(p[1], [p[2],p[3],p[4],p[6]], p[5], 'array de ')
+		p[0] = Node(p[1], [p[2],p[3],p[4],p[6]], None, 'array de ')
 		if isinstance(p[6], Node):
 			p[0].addTipo(p[6].getTipo())
 		else:
-			existeNodo = lista.search(p[6],actualLevel)
-			if existeNodo!=None:
-				p[0].addTipo(existeNodo[0])
-			else:
-				semanticErrorFound = True
-				print("La variable "+p[6]+" no ha sido declarada")
+			p[0].addTipo('variable')			
 	else: 
 		if(p[1]=='int'):
 			p[0]=Node(p[1], None,None, 'int')
@@ -184,11 +179,8 @@ def p_Inst(p):
 # Regla de la gramatica que reconoce todas instrucciones con puntos.
 def p_Inst_Punto(p):
 	'''Inst_Punto : TkId TkPunto Operacion TkPuntoYComa '''
-	if (isinstance(p[3],int)):
-		p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1]),Node('-Expresion: '+str(p[3]))],None, None )
-	else:
-		p[3].changeType('-Expresion: '+str(p[3]))
-		p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1]),p[3]], None)
+	p[3].changeType('-Expresion: '+str(p[3]))
+	p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1],leaf='variable'),p[3]], 'punto', None)
 
 # Regla de la gramatica que reconoce todas instrucciones.
 def p_Lista_Instrucciones(p):
@@ -213,10 +205,10 @@ def p_Inst_If(p):
 	p[2].changeType('-Guardia: '+str(p[2]))
 	p[4].changeType('-Exito: '+str(p[4]))
 	if (len(p)==6):
-		p[0] = Node('CONDICIONAL', [p[2],p[4]], None, None)
+		p[0] = Node('CONDICIONAL', [p[2],p[4]], 'if', None)
 	else:
 		p[7].changeType('-Fracaso: '+str(p[7]))
-		p[0] = Node('CONDICIONAL', [p[2],p[4],p[7]], None, None)
+		p[0] = Node('CONDICIONAL', [p[2],p[4],p[7]], 'if', None)
 
 # Regla de la gramatica que reconoce todas instrucciones de ciclos o while.
 def p_Inst_Bool(p):
@@ -224,7 +216,7 @@ def p_Inst_Bool(p):
 	'''
 	p[2].changeType('-Guardia: '+str(p[2]))
 	p[4].changeType('-Exito: '+str(p[4]))
-	p[0] = Node('CICLO', [p[2],p[4]], None, None)
+	p[0] = Node('CICLO', [p[2],p[4]], 'while', None)
 	
 # Regla de la gramatica que reconoce todas instrucciones de iteracion determinada (For).
 def p_Inst_For(p):
@@ -239,11 +231,11 @@ def p_Inst_For(p):
 
 	if (len(p)==10):
 		p[8].changeType('-Exito: '+str(p[8]))
-		p[0]= Node('ITERACION DETERMINADA', [p[2],p[4],p[6],p[8]], None, None)
+		p[0]= Node('ITERACION DETERMINADA', [p[2],p[4],p[6],p[8]], 'for', None)
 	else:
 		p[8].changeType('-Step: '+str(p[8]))
 		p[10].changeType('-Exito: '+str(p[10]))
-		p[0]= Node('ITERACION DETERMINADA', [p[2], p[4], p[6], p[8], p[10]], None, None)
+		p[0]= Node('ITERACION DETERMINADA', [p[2], p[4], p[6], p[8], p[10]], 'for', None)
 
 # Regla de la gramatica que reconoce todas las operaciones del lenguaje.
 def p_Operacion(p):
@@ -286,27 +278,13 @@ def p_Operacion(p):
 			if caracter.match(p[1]):
 				p[0] = Node('caracter ('+p[1]+')', None, None, 'char')
 			else:
-				global lista, actualLevel
-				buscando = lista.search(p[1],actualLevel)
-				if buscando != None:
-					p[0] = Node('variable ("'+p[1]+'")', None, None, buscando[0])
-				else:
-					print("La variable "+p[1]+" no ha sido declarada")
-					exit() 
+				p[0] = Node('variable ("'+p[1]+'")', None, None, 'variable')
 	
 	elif (len(p) == 3):
 		if (p[1] == '-'):
-			if p[2].getTipo()=='int':
-				p[0]=Node("MENOS UNARIO",  [p[2]], None, 'int')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("MENOS UNARIO",  [p[2]], 'menos u', 'int')
 		else:
-			if p[2].getTipo()=='bool':
-				p[0]=Node("NOT",  [p[2]], None, 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("NOT",  [p[2]], 'not', 'bool')
 	
 	else:
 		if not (p[1]=='('):
@@ -322,83 +300,31 @@ def p_Operacion(p):
 		'''
 
 		if (p[2] == '+'):
-			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
-				p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int')
 		elif (p[2] == '-'):
-			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
-				p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int')
 		elif (p[2] == '*'):
-			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
-				p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int')
 		elif (p[2] == '/'):
-			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
-				p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int')
 		elif (p[2] == '%'):
-			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
-				p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int')
 		elif (p[2] == '<'):
-			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
-				p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool')
 		elif (p[2] == '<='):
-			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
-				p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool')
 		elif (p[2] == '>'):
-			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
-				p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool')
 		elif (p[2] == '>='):
-			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
-				p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool')
 		elif (p[2] == '='):
-			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
-				p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool')
 		elif (p[2] == '/='):
-			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
-				p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool')
 		elif (p[2] == '/\\'):
-			if p[1].getTipo() == 'bool' and p[3].getTipo() == 'bool':
-				p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool')
 		elif (p[2] == '\/'):
-			if p[1].getTipo() == 'bool' and p[3].getTipo() == 'bool':
-				p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool')
-			else:
-				print("Operacion invalida")
-				exit()
+			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool')
 
 # Regla de la gramatica que reconoce todas las operaciones de los arreglos.
 def p_Op_Arreglo(p):
@@ -415,71 +341,29 @@ def p_Op_Arreglo(p):
 	if (len(p)==5):
 		p[3].changeType("-Index: "+str(p[3]))
 		if isinstance(p[1],str):
-			buscando = lista.search(p[1],actualLevel)
-			if buscando != None:
-				if (buscando[0][:5]=='array'):
-					p[1] = Node("-Arreglo: "+p[1], None, None, buscando[0])
-				else:
-					print("Operacion invalida")
-					exit()
-			else:
-				print("La variable "+p[1]+" no ha sido declarada")
-				exit()
+			p[1] = Node("-Arreglo: "+p[1], None, None, 'variable')			
 		else:
 			p[1].changeType("-Arreglo: "+str(p[1]))
-		p[0] = Node("INDEXACION", [p[1],p[3]], None, p[1].getTipo())
+		p[0] = Node("INDEXACION", [p[1],p[3]], 'index', p[1].getTipo())
 	
 	elif (len(p)==3):
 		if isinstance(p[2],str):
-			buscando = lista.search(p[2],actualLevel)
-			if buscando != None:
-				if (buscando[0][:5]=='array'):
-					p[2] = Node("-Arreglo: "+p[2], None, None, buscando[0])
-				else:
-					print("Operacion invalida")
-					exit()
-			else:
-				print("La variable "+p[2]+" no ha sido declarada")
-				exit()
+			p[2] = Node("-Arreglo: "+p[2], None, None, 'variable')
 		else:
 			p[2].changeType("-Arreglo: "+str(p[2]))
-		p[0] = Node("SHIFT", [p[2]], None, p[2].getTipo())
+		p[0] = Node("SHIFT", [p[2]], p[1], p[2].getTipo())
 	
 	else:
 		if isinstance(p[1],str):
-			buscando = lista.search(p[1],actualLevel)
-			if buscando != None:
-				if (buscando[0][:5]=='array'):
-					p[1] = Node("-Arreglo izquierdo: "+p[1], None, None, buscando[0])
-				else:
-					print("Operacion invalida")
-					exit()
-			else:
-				print("La variable "+p[1]+" no ha sido declarada")
-				exit()
+			p[1] = Node("-Arreglo izquierdo: "+p[1], None, None, 'variable')
 		else:
 			p[1].changeType("-Arreglo izquierdo: "+str(p[1]))
 
 		if isinstance(p[3],str):
-			buscando = lista.search(p[3],actualLevel)
-			if buscando != None:
-				if (buscando[0][:5]=='array'):
-					p[3] = Node("-Arreglo derecho: "+p[3], None, None, buscando[0])
-				else:
-					print("Operacion invalida")
-					exit()
-			else:
-				print("La variable "+p[3]+" no ha sido declarada")
-				exit()
-		
+			p[3] = Node("-Arreglo derecho: "+p[3], None, None, 'variable')
 		else:
 			p[3].changeType("-Arreglo derecho: "+str(p[3]))
-		
-		if (p[1].getTipo()==p[3].getTipo()):
-			p[0] = Node("CONCATENACION", [p[1],p[3]], None, p[1].getTipo())
-		else:
-			print("Operacion invalida")
-			exit()
+		p[0] = Node("CONCATENACION", [p[1],p[3]], p[2], p[1].getTipo())
 
 
 # Regla de la gramatica que reconoce todas las operaciones con los caracteres.
@@ -502,18 +386,10 @@ def p_OpCaracter(p):
 		elif caracter.match(p[2]):
 			p[2] = Node('-Caracter: '+str(p[2]), None,None, 'char')
 		else:
-			buscando = lista.search(p[2],actualLevel)
-			if buscando != None:
-				if (buscando[0]=='char'):
-					p[2] = Node('-Variable: '+str(p[2]), None,None, 'char')
-				else:
-					print("Operacion invalida")
-					exit()
-			else:
-				print("La variable "+p[2]+" no ha sido declarada")
-				exit()
+			p[2] = Node('-Variable: '+str(p[2]), None,None, 'char')
+
 		
-		p[0] = Node('VALOR ASCII',[p[2]], None, p[2].getTipo())
+		p[0] = Node('VALOR ASCII',[p[2]], p[1], p[2].getTipo())
 	
 	else:
 		if isinstance(p[1],Node):
@@ -521,21 +397,13 @@ def p_OpCaracter(p):
 		elif caracter.match(p[1]):
 			p[1] = Node('-Caracter: '+str(p[1]),None,'char')
 		else:
-			buscando = lista.search(p[1],actualLevel)
-			if buscando != None:
-				if (buscando[0]=='char'):
-					p[1] = Node('-Variable: '+str(p[1]),None,'char')
-				else:
-					print("Operacion invalida")
-					exit()
-			else:
-				print("La variable "+p[1]+" no ha sido declarada")
-				exit()
+			p[1] = Node('-Variable: '+str(p[1]),None,'char')
+
 		
 		if (p[2]=='[+][+]'):
-			p[0] = Node('CARACTER SIGUIENTE',[p[1]], None, 'char')
+			p[0] = Node('CARACTER SIGUIENTE',[p[1]], p[2], 'char')
 		else:
-			p[0] = Node('CARACTER ANTERIOR',[p[1]], None, 'char')
+			p[0] = Node('CARACTER ANTERIOR',[p[1]], p[2], 'char')
 
 # Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
@@ -545,23 +413,14 @@ def p_Inst_Asignacion(p):
 	global lista, actualLevel
 	
 	if (isinstance(p[1],str)):
-		buscando = lista.search(p[1],actualLevel)
-		if buscando != None:
-			p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,buscando[0])
-		else:
-			print("La variable "+p[1]+" no ha sido declarada")
-			exit()
-
+		p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,'variable')
+		
 	if (isinstance(p[3].type,int)):
 		p[3].changeType('-Expresion: literal entero('+str(p[3])+')')
-	
 	else:
 		p[3].changeType('-Expresion: '+str(p[3]))
-	if p[1].getTipo()==p[3].getTipo():
-		p[0] = Node('ASIGNACION', [p[1], p[3]], None, p[3].getTipo())
-	else:
-		print("Asignacion invalida")
-		exit()
+	p[0] = Node('ASIGNACION', [p[1], p[3]], 'asignacion', p[3].getTipo())
+
 
 # Regla de la gramatica que reconoce los print
 def p_Inst_Salida(p):
