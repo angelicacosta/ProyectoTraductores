@@ -7,13 +7,14 @@ import ply.lex as lex
 import sys
 import re
 from Entrega1 import tokens, obtenerColumna, lexerErrorFound
-from hash_table import *
+from lista import *
 
 parserErrorFound=False
 semanticErrorFound=False
-redeclarationError=False
-#tablasSimbolos=Cola()
-tabla = HashTable(10)
+
+lista=List()
+actualLevel=0
+nodoNuevo = NodeList()
 
 # Indica cuales son el orden de precedencia de los tokens y hacia donde asocian.
 precedence = (
@@ -60,9 +61,18 @@ class Node:
 	def getType(self):
 		return self.type
 
+	def getLeaf(self):
+		return self.leaf
+
+	def setLeaf(self,leaf):
+		self.leaf = leaf
+
 	#Agrega hijos a un nodo.
 	def addChildren(self,newChildren):
 		self.children = [newChildren] + self.children
+
+	def addTipo(self,newTipo):
+		self.tipo = self.tipo + newTipo
 
 # Regla inicial de la gramatica
 def p_S(p):
@@ -70,9 +80,15 @@ def p_S(p):
 	| Bloque_Inst
 	'''
 	if (p[1]=='with'):
+		global lista, nodoNuevo, actualLevel
+		temp = copy.deepcopy(nodoNuevo)
+		lista.add(temp)
+		actualLevel+=1
+		nodoNuevo = NodeList(level=actualLevel+1)
 		p[0] = p[3]
 	else: 
-		p[0] =  p[1]
+		p[0] = p[1]
+	p[0].setLeaf(True)
 
 # Regla de la gramatica que reconoce todas las declaracios de variables.
 def p_Lista_Declaraciones(p):
@@ -80,7 +96,7 @@ def p_Lista_Declaraciones(p):
 	| TkVar Lista_Variables '''
 
 	if(len(p)>3):
-		p[0]= str(p[2]) +'\n' + str(p[3])  
+		p[0]= (p[2]) +'\n' + str(p[3])  
 	else:
 		p[0] = p[2]
 
@@ -90,32 +106,47 @@ def p_Lista_Variables(p):
 	| TkId TkAsignacion Operacion TkComa Lista_Variables
 	| TkId TkAsignacion Operacion TkDosPuntos Tipo
 	| TkId TkDosPuntos Tipo '''
-	global redeclarationError
+	
+	global nodoNuevo
 	if (len(p)==6):
+		if p[4]==r':':
+			nodoNuevo.add(p[1],p[5].getTipo(),None)
+			p[0] = Node(p[2], [p[1], p[3]], p[1])
+		else:
+			nodoNuevo.add(p[1],nodoNuevo.getType(p[5].getLeaf()),None)
+			p[0] = Node(p[2], [p[1], p[3]], p[1])
+
 		#p[0]= str(Node(p[2], [p[1], p[3]], None, None)) + ' '+ str(p[5])
-		p[0]=Node(str(Node(p[2], [p[1], p[3]], None, None)) + ' '+ str(p[5]), None,None, p[5].getTipo())
-		if (p[4]==':'):
-			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[5]))
-		else:
-			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[5].getTipo()))
 	else:
-		#p[0]= str(p[1]) +'\n' + str(p[3])  
-		p[0]=Node(str(p[1]) +'\n' + str(p[3]), None,None, p[3].getTipo())
-		if(p[2]==':'):
-			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[3]))
+		if p[2]==r':':
+			nodoNuevo.add(p[1],p[3].getTipo(),None)
+			p[0] = Node(p[2], [p[1]], p[1])
 		else:
-			redeclarationError=tabla.agregarElemento(HashEntry(hash(p[1]),p[3].getTipo()))
+			nodoNuevo.add(p[1],nodoNuevo.getType(p[3].getLeaf()),None)
+			p[0] = Node(p[2], [p[1]], p[1])
+		
+		#p[0]= str(p[1]) +'\n' + str(p[3])   
 
 # Regla de la gramatica que reconoce todo los tipos de variables.
 def p_Tipo(p):
 	''' Tipo : TkInt 
 	| TkBool 
 	| TkChar
-	| TkArray  TkCorcheteAbre Operacion TkCorcheteCierra TkOf TkId 
-	| TkArray  TkCorcheteAbre Operacion TkCorcheteCierra TkOf Tipo
+	| TkArray TkCorcheteAbre Operacion TkCorcheteCierra TkOf TkId 
+	| TkArray TkCorcheteAbre Operacion TkCorcheteCierra TkOf Tipo
 	'''
+	global lista, actualLevel
 	if (p[1]=='array'):
-		p[0] = Node(p[1], [p[2],p[3],p[4],p[6]], p[5], p[6].getTipo())
+		p[0] = Node(p[1], [p[2],p[3],p[4],p[6]], p[5], 'array de ')
+		if isinstance(p[6], Node):
+			p[0].addTipo(p[6].getTipo())
+		else:
+			existeNodo = lista.search(p[6],actualLevel)
+			if existeNodo!=None:
+				p[0].addTipo(existeNodo[0])
+			else:
+				semanticErrorFound = True
+				print("La variable "+p[6]+" no ha sido declarada")
 	else: 
 		if(p[1]=='int'):
 			p[0]=Node(p[1], None,None, 'int')
@@ -145,6 +176,9 @@ def p_Inst(p):
 	| Inst_Punto
 	| S
 	'''
+	if p[0]==True:
+		global actualLevel
+		actualLevel+=1
 	p[0] = p[1]
 
 # Regla de la gramatica que reconoce todas instrucciones con puntos.
@@ -242,9 +276,9 @@ def p_Operacion(p):
 		if isinstance(p[1],int):
 			p[0] = Node('literal entero ('+str(p[1])+')', None, None, 'int')
 		elif (p[1] == 'true'):
-			p[0] = Node('booleano (TRUE)+', None, None, 'bool')
+			p[0] = Node('booleano (TRUE)', None, None, 'bool')
 		elif (p[1] == 'false'):
-			p[0] = Node('booleano (FALSE)+', None, None, 'bool')
+			p[0] = Node('booleano (FALSE)', None, None, 'bool')
 		elif isinstance(p[1],Node):
 			p[0] = p[1]
 		else:
@@ -252,13 +286,27 @@ def p_Operacion(p):
 			if caracter.match(p[1]):
 				p[0] = Node('caracter ('+p[1]+')', None, None, 'char')
 			else:
-				p[0] = Node('variable ("'+p[1]+'")', None, None, None) # p[1].getTipo())    
+				global lista, actualLevel
+				buscando = lista.search(p[1],actualLevel)
+				if buscando != None:
+					p[0] = Node('variable ("'+p[1]+'")', None, None, buscando[0])
+				else:
+					print("La variable "+p[1]+" no ha sido declarada")
+					exit() 
 	
 	elif (len(p) == 3):
 		if (p[1] == '-'):
-			p[0]=Node("MENOS UNARIO",  [p[2]], None, 'int')
+			if p[2].getTipo()=='int':
+				p[0]=Node("MENOS UNARIO",  [p[2]], None, 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		else:
-			p[0]=Node("NOT",  [p[2]], None, 'bool')
+			if p[2].getTipo()=='bool':
+				p[0]=Node("NOT",  [p[2]], None, 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 	
 	else:
 		if not (p[1]=='('):
@@ -274,31 +322,83 @@ def p_Operacion(p):
 		'''
 
 		if (p[2] == '+'):
-			p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int')
+			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
+				p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '-'):
-			p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int')
+			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
+				p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '*'):
-			p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int')
+			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
+				p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '/'):
-			p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int')
+			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
+				p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '%'):
-			p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int')
+			if p[1].getTipo() == 'int' and p[3].getTipo() == 'int':
+				p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '<'):
-			p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
+				p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '<='):
-			p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
+				p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '>'):
-			p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
+				p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '>='):
-			p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
+				p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '='):
-			p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
+				p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '/='):
-			p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool'):
+				p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '/\\'):
-			p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool')
+			if p[1].getTipo() == 'bool' and p[3].getTipo() == 'bool':
+				p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '\/'):
-			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool')
+			if p[1].getTipo() == 'bool' and p[3].getTipo() == 'bool':
+				p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 
 # Regla de la gramatica que reconoce todas las operaciones de los arreglos.
 def p_Op_Arreglo(p):
@@ -311,32 +411,75 @@ def p_Op_Arreglo(p):
 	| Op_Arreglo TkConca Op_Arreglo
 	| TkId TkConca Op_Arreglo
 	'''
+	global lista, actualLevel
 	if (len(p)==5):
 		p[3].changeType("-Index: "+str(p[3]))
 		if isinstance(p[1],str):
-			p[1] = Node("-Arreglo: "+p[1])
+			buscando = lista.search(p[1],actualLevel)
+			if buscando != None:
+				if (buscando[0][:5]=='array'):
+					p[1] = Node("-Arreglo: "+p[1], None, None, buscando[0])
+				else:
+					print("Operacion invalida")
+					exit()
+			else:
+				print("La variable "+p[1]+" no ha sido declarada")
+				exit()
 		else:
 			p[1].changeType("-Arreglo: "+str(p[1]))
-		p[0] = Node("INDEXACION", [p[1],p[3]])
+		p[0] = Node("INDEXACION", [p[1],p[3]], None, p[1].getTipo())
 	
 	elif (len(p)==3):
 		if isinstance(p[2],str):
-			p[2] = Node("-Arreglo: "+p[2])
+			buscando = lista.search(p[2],actualLevel)
+			if buscando != None:
+				if (buscando[0][:5]=='array'):
+					p[2] = Node("-Arreglo: "+p[2], None, None, buscando[0])
+				else:
+					print("Operacion invalida")
+					exit()
+			else:
+				print("La variable "+p[2]+" no ha sido declarada")
+				exit()
 		else:
 			p[2].changeType("-Arreglo: "+str(p[2]))
-		p[0] = Node("SHIFT", [p[2]])
+		p[0] = Node("SHIFT", [p[2]], None, p[2].getTipo())
 	
 	else:
 		if isinstance(p[1],str):
-			p[1] = Node("-Arreglo izquierdo: "+p[1])
+			buscando = lista.search(p[1],actualLevel)
+			if buscando != None:
+				if (buscando[0][:5]=='array'):
+					p[1] = Node("-Arreglo izquierdo: "+p[1], None, None, buscando[0])
+				else:
+					print("Operacion invalida")
+					exit()
+			else:
+				print("La variable "+p[1]+" no ha sido declarada")
+				exit()
 		else:
 			p[1].changeType("-Arreglo izquierdo: "+str(p[1]))
+
 		if isinstance(p[3],str):
-			p[3] = Node("-Arreglo derecho: "+p[3])
+			buscando = lista.search(p[3],actualLevel)
+			if buscando != None:
+				if (buscando[0][:5]=='array'):
+					p[3] = Node("-Arreglo derecho: "+p[3], None, None, buscando[0])
+				else:
+					print("Operacion invalida")
+					exit()
+			else:
+				print("La variable "+p[3]+" no ha sido declarada")
+				exit()
+		
 		else:
 			p[3].changeType("-Arreglo derecho: "+str(p[3]))
 		
-		p[0] = Node("CONCATENACION", [p[1],p[3]])
+		if (p[1].getTipo()==p[3].getTipo()):
+			p[0] = Node("CONCATENACION", [p[1],p[3]], None, p[1].getTipo())
+		else:
+			print("Operacion invalida")
+			exit()
 
 
 # Regla de la gramatica que reconoce todas las operaciones con los caracteres.
@@ -351,6 +494,7 @@ def p_OpCaracter(p):
 	| OpCaracter TkAnteriorCar 
 	| TkValorAscii OpCaracter
 	'''
+	global lista, actualLevel
 	caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
 	if (p[1]=='#'):
 		if isinstance(p[2],Node):
@@ -358,33 +502,66 @@ def p_OpCaracter(p):
 		elif caracter.match(p[2]):
 			p[2] = Node('-Caracter: '+str(p[2]), None,None, 'char')
 		else:
-			p[2] = Node('-Variable: '+str(p[2]), None,None, None)
-		p[0] = Node('VALOR ASCII',[p[2]], None, p[2])
+			buscando = lista.search(p[2],actualLevel)
+			if buscando != None:
+				if (buscando[0]=='char'):
+					p[2] = Node('-Variable: '+str(p[2]), None,None, 'char')
+				else:
+					print("Operacion invalida")
+					exit()
+			else:
+				print("La variable "+p[2]+" no ha sido declarada")
+				exit()
+		
+		p[0] = Node('VALOR ASCII',[p[2]], None, p[2].getTipo())
 	
 	else:
 		if isinstance(p[1],Node):
 			p[1].changeType('-Caracter: '+str(p[1]))
 		elif caracter.match(p[1]):
-			p[1] = Node('-Caracter: '+str(p[1]))
+			p[1] = Node('-Caracter: '+str(p[1]),None,'char')
 		else:
-			p[1] = Node('-Variable: '+str(p[1]))
+			buscando = lista.search(p[1],actualLevel)
+			if buscando != None:
+				if (buscando[0]=='char'):
+					p[1] = Node('-Variable: '+str(p[1]),None,'char')
+				else:
+					print("Operacion invalida")
+					exit()
+			else:
+				print("La variable "+p[1]+" no ha sido declarada")
+				exit()
 		
 		if (p[2]=='[+][+]'):
-			p[0] = Node('CARACTER SIGUIENTE',[p[1]], None, None)
+			p[0] = Node('CARACTER SIGUIENTE',[p[1]], None, 'char')
 		else:
-			p[0] = Node('CARACTER ANTERIOR',[p[1]], None, None)
+			p[0] = Node('CARACTER ANTERIOR',[p[1]], None, 'char')
 
 # Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
 	'''Inst_Asignacion : TkId TkAsignacion Operacion TkPuntoYComa
 	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''  
 	
-	p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,None)
+	global lista, actualLevel
+	
+	if (isinstance(p[1],str)):
+		buscando = lista.search(p[1],actualLevel)
+		if buscando != None:
+			p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,buscando[0])
+		else:
+			print("La variable "+p[1]+" no ha sido declarada")
+			exit()
+
 	if (isinstance(p[3].type,int)):
 		p[3].changeType('-Expresion: literal entero('+str(p[3])+')')
+	
 	else:
 		p[3].changeType('-Expresion: '+str(p[3]))
-	p[0] = Node('ASIGNACION', [p[1], p[3]], None, p[3].getTipo())
+	if p[1].getTipo()==p[3].getTipo():
+		p[0] = Node('ASIGNACION', [p[1], p[3]], None, p[3].getTipo())
+	else:
+		print("Asignacion invalida")
+		exit()
 
 # Regla de la gramatica que reconoce los print
 def p_Inst_Salida(p):
@@ -427,10 +604,9 @@ def main():
 	result = parser.parse(string)
 	
 	#Si no hay errores, imprime el arbol.
-	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound) and (not redeclarationError):
+	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
 		printTree(result, 0)
-		#print(tablasSimbolos)
-		print(tabla)
+		lista.printList()
 
 #Llamada a la funcion
 main()
