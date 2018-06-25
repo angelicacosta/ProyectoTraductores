@@ -531,14 +531,18 @@ def printTree(nodo, tabs):
 				printTree(nodo.children[i], tabs+1)
 
 #Funcion que verifica si las variables ya fueron declaradas
-def verifyVariable(nodo, level):
+def verifyVariable(nodo, level, first):
 	global lista
 	if not (isinstance(nodo, Node)):
 		return
 	if nodo.getLeaf() == 'with':
-		level=level-1
+		level+=1
+		if first:
+			level+=1
+			first=False
+
 	for i in range(len(nodo.children)):
-		verifyVariable(nodo.children[i], level)
+		verifyVariable(nodo.children[i], level, first)
 		if nodo.children[i] != None:
 			if nodo.children[i].getTipo() == 'variable':
 				buscando = lista.search(nodo.children[i].getLeaf(),level)
@@ -678,7 +682,7 @@ def main():
 	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
 		printTree(result, 0)
-		verifyVariable(result,actualLevel)
+		verifyVariable(result,0,True)
 		verifySemantics(result)
 		print('\n\t Tabla de simbolos: \n')
 		lista.printList()

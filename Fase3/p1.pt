@@ -3,7 +3,7 @@ with
 	var a : array[2] of int
 	var boleano : bool
 begin 
-	while (n < 3 /\ true) ->
+	while (i < 3 /\ true) ->
 		i <- 34 * 2 + 5;
 		with
 			var t, b <- 5 : int
@@ -14,9 +14,9 @@ begin
 		end
 	end	
 	if boleano ->
-		a[1] <- t + 25;
+		a[1] <- n + 25;
 	otherwise ->
-		a[2] <- t + b;
+		a[2] <- n + i;
 		p <- 7;
 	end
 	p.(3+7);

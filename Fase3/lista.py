@@ -54,7 +54,7 @@ class List:
 	def search(self, name, level):
 		actual=self.inicial
 		for i in range(self.count):
-			if actual.getLevel() > level:
+			if actual.getLevel() < level:
 				if actual.search(name):
 					return [actual.getType(name),actual.getValue(name)]
 			actual = actual.getNext()
