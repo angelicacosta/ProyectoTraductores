@@ -1,22 +1,23 @@
 with 
-	var p: int
+	var p, i, n: int
+	var a : array[2] of int
+	var boleano : bool
 begin 
-	while (b < 3 /\ True) ->
+	while (n < 3 /\ true) ->
 		i <- 34 * 2 + 5;
 		with
-			var a, b <- 5 : int
+			var t, b <- 5 : int
 		begin
-			for a from 0 to n-1 step 3 ->
-				a.1;
+			for t from 0 to n-1 step 3 ->
+				t.1;
 			end
 		end
 	end	
-	if a ->
-		a <- a + 25;
+	if boleano ->
+		a[1] <- t + 25;
 	otherwise ->
-		a <- a + b;
-		p <- a[2+3];
+		a[2] <- t + b;
+		p <- 7;
 	end
 	p.(3+7);
 end
-**

@@ -37,13 +37,14 @@ class NodeList:
 		self.level = level
 
 class List:
-	def __init__(self, inicial=NodeList(), count=0):
+	def __init__(self, inicial=NodeList(), final=None, count=0):
 		self.inicial = inicial
+		self.final = inicial
 		self.count = count
 	
 	def add(self, nextList):
-		nextList.setNext(self.inicial)
-		self.inicial = nextList
+		self.final.setNext(nextList)
+		self.final = nextList
 		self.count += 1
 
 	def setInicial(self, inicial):
@@ -63,7 +64,7 @@ class List:
 		actual = self.inicial
 		while actual != None:
 			for key in sorted(actual.getTable().keys()):
-				print('\t'*actual.level+'| variable: '+key +' | tipo: '+actual.getType(key)+' | valor: ' + str(actual.getValue(key)))
+				print('\t'*actual.level+'| variable: '+key +' | tipo: '+actual.getType(key)+' | valor: ' + str(actual.level))
 			actual = actual.getNext()
 
 '''

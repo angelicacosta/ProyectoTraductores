@@ -85,10 +85,11 @@ def p_S(p):
 		lista.add(temp)
 		nodoNuevo = NodeList(level=actualLevel)
 		p[0] = p[3]
-		actualLevel-=1
+		p[0].setLeaf('with')
+		actualLevel-=1	
 	else: 
 		p[0] = p[1]
-	p[0].setLeaf(True)
+	
 
 # Regla de la gramatica que reconoce todas las declaracios de variables.
 def p_Lista_Declaraciones(p):
@@ -113,21 +114,36 @@ def p_Lista_Variables(p):
 	global nodoNuevo
 	if (len(p)==6):
 		if p[4]==r':':
-			nodoNuevo.add(p[1],p[5].getTipo(),None)
+			if not nodoNuevo.search(p[1]):
+				nodoNuevo.add(p[1],p[5].getTipo(),None)
+			else:
+				print("No puede redeclarar la variable "+p[1])
+				exit()
 			p[0] = Node(p[2], [p[1], p[3]], p[1])
 		else:
-			nodoNuevo.add(p[1],nodoNuevo.getType(p[5].getLeaf()),None)
+			if not nodoNuevo.search(p[1]):
+				nodoNuevo.add(p[1],nodoNuevo.getType(p[5].getLeaf()),None)
+			else:
+				print("No puede redeclarar la variable "+p[1])
+				exit()
 			p[0] = Node(p[2], [p[1], p[3]], p[1])
-
+		
 		#p[0]= str(Node(p[2], [p[1], p[3]], None, None)) + ' '+ str(p[5])
 	else:
 		if p[2]==r':':
-			nodoNuevo.add(p[1],p[3].getTipo(),None)
+			if not nodoNuevo.search(p[1]):
+				nodoNuevo.add(p[1],p[3].getTipo(),None)
+			else:
+				print("No puede redeclarar la variable "+p[1])
+				exit()
 			p[0] = Node(p[2], [p[1]], p[1])
 		else:
-			nodoNuevo.add(p[1],nodoNuevo.getType(p[3].getLeaf()),None)
+			if not nodoNuevo.search(p[1]):
+				nodoNuevo.add(p[1],nodoNuevo.getType(p[3].getLeaf()),None)
+			else:
+				print("No puede redeclarar la variable "+p[1])
+				exit()
 			p[0] = Node(p[2], [p[1]], p[1])
-		
 		#p[0]= str(p[1]) +'\n' + str(p[3])   
 
 # Regla de la gramatica que reconoce todo los tipos de variables.
@@ -135,16 +151,13 @@ def p_Tipo(p):
 	''' Tipo : TkInt 
 	| TkBool 
 	| TkChar
-	| TkArray TkCorcheteAbre Operacion TkCorcheteCierra TkOf TkId 
 	| TkArray TkCorcheteAbre Operacion TkCorcheteCierra TkOf Tipo
 	'''
 	global lista, actualLevel
 	if (p[1]=='array'):
-		p[0] = Node(p[1], [p[2],p[3],p[4],p[6]], None, 'array de ')
-		if isinstance(p[6], Node):
-			p[0].addTipo(p[6].getTipo())
-		else:
-			p[0].addTipo('variable')			
+		p[0] = Node(p[1], [p[3]], None, 'array de ')
+		p[0].addTipo(p[6].getTipo())
+	
 	else: 
 		if(p[1]=='int'):
 			p[0]=Node(p[1], None,None, 'int')
@@ -183,7 +196,7 @@ def p_Inst(p):
 def p_Inst_Punto(p):
 	'''Inst_Punto : TkId TkPunto Operacion TkPuntoYComa '''
 	p[3].changeType('-Expresion: '+str(p[3]))
-	p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1],leaf='variable'),p[3]], 'punto', None)
+	p[0]=Node('PUNTO', [Node('-Contenedor: '+p[1],leaf=p[1],tipo='variable'),p[3]], 'punto', None)
 
 # Regla de la gramatica que reconoce todas instrucciones.
 def p_Lista_Instrucciones(p):
@@ -279,13 +292,21 @@ def p_Operacion(p):
 			if caracter.match(p[1]):
 				p[0] = Node('caracter ('+p[1]+')', None, None, 'char')
 			else:
-				p[0] = Node('variable ("'+p[1]+'")', None, None, 'variable')
+				p[0] = Node('variable ("'+p[1]+'")', None, p[1], 'variable')
 	
 	elif (len(p) == 3):
 		if (p[1] == '-'):
-			p[0]=Node("MENOS UNARIO",  [p[2]], 'menos u', 'int')
+			if (p[2].getTipo()=='int' or p[2].getTipo()=='variable'):
+				p[0]=Node("MENOS UNARIO",  [p[2]], 'menos u', 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		else:
-			p[0]=Node("NOT",  [p[2]], 'not', 'bool')
+			if (p[2].getTipo()=='bool' or p[2].getTipo()=='variable'):
+				p[0]=Node("NOT",  [p[2]], 'not', 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 	
 	else:
 		if not (p[1]=='('):
@@ -301,31 +322,83 @@ def p_Operacion(p):
 		'''
 
 		if (p[2] == '+'):
-			p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
+				p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '-'):
-			p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
+				p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '*'):
-			p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
+				p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '/'):
-			p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
+				p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '%'):
-			p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
+				p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '<'):
-			p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '<='):
-			p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '>'):
-			p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '>='):
-			p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '='):
-			p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '/='):
-			p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '/\\'):
-			p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 		elif (p[2] == '\/'):
-			p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool')
+			if (p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
+				p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool')
+			else:
+				print("Operacion invalida")
+				exit()
 
 # Regla de la gramatica que reconoce todas las operaciones de los arreglos.
 def p_Op_Arreglo(p):
@@ -338,33 +411,38 @@ def p_Op_Arreglo(p):
 	| Op_Arreglo TkConca Op_Arreglo
 	| TkId TkConca Op_Arreglo
 	'''
-	global lista, actualLevel
+	
 	if (len(p)==5):
 		p[3].changeType("-Index: "+str(p[3]))
 		if isinstance(p[1],str):
-			p[1] = Node("-Arreglo: "+p[1], None, None, 'variable')			
+			p[1] = Node("-Arreglo: "+p[1], None, p[1], 'variable')			
 		else:
 			p[1].changeType("-Arreglo: "+str(p[1]))
-		p[0] = Node("INDEXACION", [p[1],p[3]], 'index', p[1].getTipo())
+		p[0] = Node("INDEXACION", [p[1],p[3]], 'index', None)
 	
 	elif (len(p)==3):
 		if isinstance(p[2],str):
-			p[2] = Node("-Arreglo: "+p[2], None, None, 'variable')
+			p[2] = Node("-Arreglo: "+p[2], None, p[2], 'variable')
 		else:
 			p[2].changeType("-Arreglo: "+str(p[2]))
-		p[0] = Node("SHIFT", [p[2]], p[1], p[2].getTipo())
+		p[0] = Node("SHIFT", [p[2]], 'shift', None)
 	
 	else:
 		if isinstance(p[1],str):
-			p[1] = Node("-Arreglo izquierdo: "+p[1], None, None, 'variable')
+			p[1] = Node("-Arreglo izquierdo: "+p[1], None, p[1], 'variable')
 		else:
 			p[1].changeType("-Arreglo izquierdo: "+str(p[1]))
 
 		if isinstance(p[3],str):
-			p[3] = Node("-Arreglo derecho: "+p[3], None, None, 'variable')
+			p[3] = Node("-Arreglo derecho: "+p[3], None, p[3], 'variable')
 		else:
 			p[3].changeType("-Arreglo derecho: "+str(p[3]))
-		p[0] = Node("CONCATENACION", [p[1],p[3]], p[2], p[1].getTipo())
+		
+		if (p[1].getTipo()==p[3].getTipo()):
+			p[0] = Node("CONCATENACION", [p[1],p[3]], 'concat', None)
+		else:
+			print("Operacion invalida")
+			exit()
 
 
 # Regla de la gramatica que reconoce todas las operaciones con los caracteres.
@@ -387,10 +465,10 @@ def p_OpCaracter(p):
 		elif caracter.match(p[2]):
 			p[2] = Node('-Caracter: '+str(p[2]), None,None, 'char')
 		else:
-			p[2] = Node('-Variable: '+str(p[2]), None,None, 'char')
+			p[2] = Node('-Variable: '+str(p[2]), None,p[2], 'variable')
 
 		
-		p[0] = Node('VALOR ASCII',[p[2]], p[1], p[2].getTipo())
+		p[0] = Node('VALOR ASCII',[p[2]], 'ascii', p[2].getTipo())
 	
 	else:
 		if isinstance(p[1],Node):
@@ -398,13 +476,13 @@ def p_OpCaracter(p):
 		elif caracter.match(p[1]):
 			p[1] = Node('-Caracter: '+str(p[1]),None,'char')
 		else:
-			p[1] = Node('-Variable: '+str(p[1]),None,'char')
+			p[1] = Node('-Variable: '+str(p[1]),p[1],'variable')
 
 		
 		if (p[2]=='[+][+]'):
-			p[0] = Node('CARACTER SIGUIENTE',[p[1]], p[2], 'char')
+			p[0] = Node('CARACTER SIGUIENTE',[p[1]], 'siguiente', 'char')
 		else:
-			p[0] = Node('CARACTER ANTERIOR',[p[1]], p[2], 'char')
+			p[0] = Node('CARACTER ANTERIOR',[p[1]], 'anterior', 'char')
 
 # Regla de la gramatica utilizada para reconocer una asignacion
 def p_Inst_Asignacion(p):
@@ -412,15 +490,17 @@ def p_Inst_Asignacion(p):
 	| Op_Arreglo TkAsignacion Operacion TkPuntoYComa'''  
 	
 	global lista, actualLevel
-	
-	if (isinstance(p[1],str)):
-		p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,'variable')
 		
 	if (isinstance(p[3].type,int)):
 		p[3].changeType('-Expresion: literal entero('+str(p[3])+')')
 	else:
 		p[3].changeType('-Expresion: '+str(p[3]))
-	p[0] = Node('ASIGNACION', [p[1], p[3]], 'asignacion', p[3].getTipo())
+
+	if (isinstance(p[1],str)):
+		p[1] = Node('-Contenedor: variable ("'+p[1]+'")',None,p[1],'variable')
+		p[0] = Node('ASIGNACION', [p[1], p[3]], 'variable')
+	else:
+		p[0] = Node('ASIGNACION', [p[1], p[3]],'arreglo')
 
 
 # Regla de la gramatica que reconoce los print
@@ -450,8 +530,140 @@ def printTree(nodo, tabs):
 			if nodo.children[i] != None:
 				printTree(nodo.children[i], tabs+1)
 
+#Funcion que verifica si las variables ya fueron declaradas
+def verifyVariable(nodo, level):
+	global lista
+	if not (isinstance(nodo, Node)):
+		return
+	if nodo.getLeaf() == 'with':
+		level=level-1
+	for i in range(len(nodo.children)):
+		verifyVariable(nodo.children[i], level)
+		if nodo.children[i] != None:
+			if nodo.children[i].getTipo() == 'variable':
+				buscando = lista.search(nodo.children[i].getLeaf(),level)
+				if buscando != None:
+					nodo.children[i].setTipo(buscando[0])
+				else:
+					print("La variable "+nodo.children[i].getLeaf()+" no ha sido declarada")
+					exit()
+
+#Funcion que verifica si las variables ya fueron declaradas
+def verifySemantics(nodo):
+	global lista
+	if not (isinstance(nodo, Node)):
+		return
+	
+	for i in range(len(nodo.children)):
+		verifySemantics(nodo.children[i])
+	
+	fatherOperation = nodo.getLeaf()
+	if fatherOperation == 'punto':
+		if nodo.children[0].getTipo() != 'int':
+			print("No puede hacer operaciones aritmeticas con la variable " + nodo.children[0].getLeaf())
+			exit()
+		if nodo.children[1].getTipo() != 'int':
+			print("No puede asignar valores de tipo " + nodo.children[1].getTipo() + " a una variable de tipo int")
+			exit()
+		nodo.setTipo('int')
+
+	elif fatherOperation == 'if':
+		if nodo.children[0].getTipo() != 'bool':
+			print("La condicion para una instruccion IF debe ser de tipo booleana")
+			exit()
+	
+	elif fatherOperation == 'while':
+		if nodo.children[0].getTipo() != 'bool':
+			print("La condicion para una instruccion WHILE debe ser de tipo booleana")
+			exit()
+
+	elif fatherOperation == 'for':
+		if nodo.children[0].getTipo() != 'int':
+			print("La variable de iteracion no puede ser de tipo "+nodo.children[0].getTipo())
+			exit()
+		if nodo.children[1].getTipo() != 'int' or nodo.children[2].getTipo() != 'int':
+			print("Los limites de iteracion deben ser de tipo int")
+			exit()
+		if len(nodo.children)==5:
+			if nodo.children[3].getTipo() != 'int':
+				print("No se puede iterar con steps de tipo "+nodo.children[4].getTipo())
+				exit()
+
+	elif fatherOperation == 'menos u':
+		if nodo.children[0].getTipo() != 'int':
+			print("El operador menos unitario solo puede ser usado con expresiones arimeticas")
+			exit()
+	
+	elif fatherOperation == 'not':
+		if nodo.children[0].getTipo() != 'bool':
+			print("El operador NOT solo puede ser usado con expresiones booleanas")
+			exit()
+
+	elif fatherOperation == '+' or fatherOperation == '-' or fatherOperation == '*' or fatherOperation == '/' or fatherOperation == '%':
+		if nodo.children[0].getTipo() != 'int' or nodo.children[1].getTipo() != 'int':
+			print("El operador "+fatherOperation+" solo puede ser usado con expresiones aritmeticas")
+			exit()
+	
+	elif fatherOperation == '<' or fatherOperation == '<=' or fatherOperation == '>' or fatherOperation == '>=' or fatherOperation == '=' or fatherOperation == '/=':
+		if (nodo.children[0].getTipo() != 'bool' and nodo.children[0].getTipo() != 'int') or (nodo.children[1].getTipo() != 'int' and nodo.children[1].getTipo() != 'bool'):
+			print("El operador "+fatherOperation+" solo puede ser usado con expresiones aritmeticas")
+			exit()
+
+	elif fatherOperation == '/\\' or fatherOperation == '\/':
+		if (nodo.children[0].getTipo() != 'bool' or nodo.children[1].getTipo() != 'bool'):
+			print("El operador "+fatherOperation+" solo puede ser usado con expresiones booleanas")
+			exit()
+
+	elif fatherOperation == 'index':
+		if (nodo.children[0].getTipo()[:5] != 'array'):
+			print("El operador "+fatherOperation+" solo puede ser usado con arreglos")
+			exit()
+		if (nodo.children[1].getTipo() != 'int'):
+			print("Para indexar un arreglo la expresion debe ser artimetica")
+			exit()
+		nodo.setTipo(nodo.children[0].getTipo())
+
+	elif fatherOperation == 'shift':
+		if (nodo.children[0].getTipo()[:5] != 'array'):
+			print("El operador "+fatherOperation+" solo puede ser usado con arreglos")
+			exit() 
+		nodo.setTipo(nodo.children[0].getTipo())
+
+	elif fatherOperation == 'concat':
+		if (nodo.children[0].getTipo() != nodo.children[1].getTipo() or nodo.children[0].getTipo()[:5] != 'array' or nodo.children[1].getTipo()[:5] != 'array'):
+			print("El operador "+fatherOperation+" solo puede ser usado con array")
+			exit()
+		nodo.setTipo(nodo.children[0].getTipo())
+
+	elif fatherOperation == 'ascii':
+		if (nodo.children[0].getTipo() != 'char'):
+			print("El operador ascii solo puede ser usado con expresiones de tipo char")
+			exit()
+		nodo.setTipo(nodo.children[0].getTipo())
+
+	elif fatherOperation == 'siguiente':
+		if (nodo.children[0].getTipo() != 'char'):
+			print("El operador siguiente solo puede ser usado con expresiones de tipo char")
+			exit()
+		nodo.setTipo(nodo.children[0].getTipo())
+
+	elif fatherOperation == 'anterior':
+		if (nodo.children[0].getTipo() != 'char'):
+			print("El operador anterior solo puede ser usado con expresiones de tipo char")
+			exit()	
+		nodo.setTipo(nodo.children[0].getTipo())
+
+	if nodo.getType() == 'ASIGNACION':
+		if fatherOperation=='variable':
+			if (nodo.children[0].getTipo() != nodo.children[1].getTipo()):
+				print("A la variable de tipo "+nodo.children[0].getTipo()+" no se le puede asignar un valor de tipo "+nodo.children[1].getTipo())
+				exit()	
+		else:
+			pass
+
 
 def main():
+	global actualLevel
 	if (len(sys.argv) != 2):
 		print("Usage: python3 parser.py nombreArchivo")
 		return -1
@@ -466,7 +678,8 @@ def main():
 	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
 		printTree(result, 0)
-
+		verifyVariable(result,actualLevel)
+		verifySemantics(result)
 		print('\n\t Tabla de simbolos: \n')
 		lista.printList()
 
