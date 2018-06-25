@@ -601,7 +601,7 @@ def verifySemantics(nodo):
 
 	elif fatherOperation == 'for':
 		if nodo.children[0].getTipo() != 'int':
-			print("La variable de iteracion no puede ser de tipo "+nodo.children[0].getTipo())
+			print("La variable de iteracion no puede ser de tipo "+ str(nodo.children[0].getTipo()))
 			exit()
 		if nodo.children[1].getTipo() != 'int' or nodo.children[2].getTipo() != 'int':
 			print("Los limites de iteracion deben ser de tipo int")
