@@ -84,7 +84,7 @@ def p_S(p):
 		temp = copy.deepcopy(nodoNuevo)
 		lista.add(temp)
 		nodoNuevo = NodeList(level=actualLevel)
-		p[0] = p[3]
+		p[0] = Node("",[p[3]])
 		p[0].setLeaf('with')
 		actualLevel-=1	
 	else: 
@@ -152,11 +152,16 @@ def p_Tipo(p):
 	| TkBool 
 	| TkChar
 	| TkArray TkCorcheteAbre Operacion TkCorcheteCierra TkOf Tipo
+	| TkArray TkCorcheteAbre Operacion TkCorcheteCierra TkOf TkId
 	'''
 	global lista, actualLevel
 	if (p[1]=='array'):
 		p[0] = Node(p[1], [p[3]], None, 'array de ')
-		p[0].addTipo(p[6].getTipo())
+		if isinstance(p[6],Node):
+			p[0].addTipo(p[6].getTipo())
+		else:
+			p[0].setLeaf(p[6])
+			p[0].addTipo('variable')
 	
 	else: 
 		if(p[1]=='int'):
@@ -187,9 +192,6 @@ def p_Inst(p):
 	| Inst_Punto
 	| S
 	'''
-	#if p[0]==True:
-	#	global actualLevel
-	#	actualLevel+=1
 	p[0] = p[1]
 
 # Regla de la gramatica que reconoce todas instrucciones con puntos.
@@ -506,12 +508,12 @@ def p_Inst_Asignacion(p):
 # Regla de la gramatica que reconoce los print
 def p_Inst_Salida(p):
 	'''Inst_Salida : TkPrint Operacion TkPuntoYComa '''
-	p[0]= Node('PRINT', [p[2]], None)
+	p[0]= Node('PRINT', [p[2]], None, 'print')
 
 # Regla de la gramatica que reconoce los read	
 def p_Inst_Entrada(p):
 	'''Inst_Entrada : TkRead TkId TkPuntoYComa '''
-	p[0]= Node('READ', [p[2]], None)
+	p[0]= Node('READ', [Node(type='-Variable: '+p[2],leaf=p[2],tipo='variable')], None,'read')
 
 
 #Regla de los errores sintacticos
@@ -531,26 +533,42 @@ def printTree(nodo, tabs):
 				printTree(nodo.children[i], tabs+1)
 
 #Funcion que verifica si las variables ya fueron declaradas
-def verifyVariable(nodo, level, first):
+def verifyVariable(nodo, level):
 	global lista
 	if not (isinstance(nodo, Node)):
 		return
+	
 	if nodo.getLeaf() == 'with':
 		level+=1
-		if first:
-			level+=1
-			first=False
 
 	for i in range(len(nodo.children)):
-		verifyVariable(nodo.children[i], level, first)
+		verifyVariable(nodo.children[i], level)
 		if nodo.children[i] != None:
-			if nodo.children[i].getTipo() == 'variable':
+			temp = nodo.children[i].getTipo()
+			if temp == 'variable':
 				buscando = lista.search(nodo.children[i].getLeaf(),level)
 				if buscando != None:
 					nodo.children[i].setTipo(buscando[0])
 				else:
 					print("La variable "+nodo.children[i].getLeaf()+" no ha sido declarada")
 					exit()
+			
+			elif temp != None:
+				if temp[:5] == "array":
+					print("encontramos un array "+nodo.children[i].getLeaf())
+					temp2 = ""
+					while temp[:9] == "array de ":
+						temp2 += temp[:9]
+						temp = temp[9:]
+						
+					if temp == 'variable':
+						buscando = lista.search(nodo.children[i].getLeaf(),level)
+						if buscando != None:
+							nodo.children[i].setTipo(temp2+buscando[0])
+						else:
+							print("La variable "+nodo.children[i].getLeaf()+" no ha sido declarada")
+							exit()
+	
 
 #Funcion que verifica si las variables ya fueron declaradas
 def verifySemantics(nodo):
@@ -682,9 +700,10 @@ def main():
 	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
 		printTree(result, 0)
-		verifyVariable(result,0,True)
+		verifyVariable(result,-1)
 		verifySemantics(result)
-		print('\n\t Tabla de simbolos: \n')
+		print('\n***********************\n** TABLA DE SIMBOLOS **\n***********************\n')
+		
 		lista.printList()
 
 #Llamada a la funcion

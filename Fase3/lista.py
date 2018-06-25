@@ -4,8 +4,11 @@ class NodeList:
 	def __init__(self, table=None, nextNode=None, level=0):
 		self.table = {}
 		self.nextNode = nextNode
-		self.level = level
-	
+		if level != 0:
+			self.level = level-1
+		else:
+			self.level = level
+		
 	def add(self, name, idType, value):
 		self.table[name] = [idType,value]
 	
@@ -34,7 +37,10 @@ class NodeList:
 		self.nextNode = nextNode
 
 	def setLevel(self, level):
-		self.level = level
+		if level != 0:
+			self.level = level-1
+		else:
+			self.level = level
 
 class List:
 	def __init__(self, inicial=NodeList(), final=None, count=0):
@@ -54,7 +60,7 @@ class List:
 	def search(self, name, level):
 		actual=self.inicial
 		for i in range(self.count):
-			if actual.getLevel() < level:
+			if actual.getLevel() <= level:
 				if actual.search(name):
 					return [actual.getType(name),actual.getValue(name)]
 			actual = actual.getNext()
@@ -64,7 +70,7 @@ class List:
 		actual = self.inicial
 		while actual != None:
 			for key in sorted(actual.getTable().keys()):
-				print('\t'*actual.level+'| variable: '+key +' | tipo: '+actual.getType(key)+' | valor: ' + str(actual.level))
+				print('\t'*actual.level+'| variable: '+key +' | tipo: '+actual.getType(key))
 			actual = actual.getNext()
 
 '''
@@ -89,4 +95,13 @@ lista = List()
 lista.setInicial(nodo2)
 lista.add(nodo1)
 
-lista.printList()'''
+lista.printList()
+
+h = "array de array de f"
+f = ""
+while h[:9] == "array de ":
+	f += h[:9]
+	h = h[9:]
+
+print(h)
+print(f+".")'''
