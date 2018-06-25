@@ -79,13 +79,13 @@ def p_S(p):
 	''' S : TkWith Lista_Declaraciones Bloque_Inst 
 	| Bloque_Inst
 	'''
+	global lista, nodoNuevo, actualLevel
 	if (p[1]=='with'):
-		global lista, nodoNuevo, actualLevel
 		temp = copy.deepcopy(nodoNuevo)
 		lista.add(temp)
-		actualLevel+=1
-		nodoNuevo = NodeList(level=actualLevel+1)
+		nodoNuevo = NodeList(level=actualLevel)
 		p[0] = p[3]
+		actualLevel-=1
 	else: 
 		p[0] = p[1]
 	p[0].setLeaf(True)
@@ -94,10 +94,14 @@ def p_S(p):
 def p_Lista_Declaraciones(p):
 	'''Lista_Declaraciones : TkVar Lista_Variables Lista_Declaraciones 
 	| TkVar Lista_Variables '''
-
+	global lista, nodoNuevo, actualLevel
 	if(len(p)>3):
-		p[0]= (p[2]) +'\n' + str(p[3])  
+		p[0]= str(p[2]) +'\n' + str(p[3])  
 	else:
+		temp = copy.deepcopy(nodoNuevo)
+		lista.add(temp)
+		actualLevel+=1
+		nodoNuevo = NodeList(level=actualLevel+1)
 		p[0] = p[2]
 
 # Regla de la gramatica que reconoce toda la lista de variables.
@@ -106,7 +110,6 @@ def p_Lista_Variables(p):
 	| TkId TkAsignacion Operacion TkComa Lista_Variables
 	| TkId TkAsignacion Operacion TkDosPuntos Tipo
 	| TkId TkDosPuntos Tipo '''
-	
 	global nodoNuevo
 	if (len(p)==6):
 		if p[4]==r':':
@@ -171,9 +174,9 @@ def p_Inst(p):
 	| Inst_Punto
 	| S
 	'''
-	if p[0]==True:
-		global actualLevel
-		actualLevel+=1
+	#if p[0]==True:
+	#	global actualLevel
+	#	actualLevel+=1
 	p[0] = p[1]
 
 # Regla de la gramatica que reconoce todas instrucciones con puntos.
@@ -192,7 +195,6 @@ def p_Lista_Instrucciones(p):
 			p[0] = p[2]
 		else:
 			p[0]=Node('SECUENCIACION', [p[1],p[2]], None, None)
-
 	else:
 		p[0] = p[1]
 	  
@@ -201,7 +203,6 @@ def p_Inst_If(p):
 	'''Inst_If : TkIf Operacion TkHacer Lista_Instrucciones TkEnd
 	| TkIf Operacion TkHacer Lista_Instrucciones TkOtherwise TkHacer Lista_Instrucciones TkEnd
 	'''
-	
 	p[2].changeType('-Guardia: '+str(p[2]))
 	p[4].changeType('-Exito: '+str(p[4]))
 	if (len(p)==6):
@@ -465,6 +466,8 @@ def main():
 	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
 		printTree(result, 0)
+
+		print('\n\t Tabla de simbolos: \n')
 		lista.printList()
 
 #Llamada a la funcion
