@@ -24,6 +24,9 @@ class NodeList:
 	def getType(self, name):
 		return self.table[name][0]
 
+	def setType(self, name, newType):
+		self.table[name][0] = newType
+
 	def getValue(self, name):
 		return self.table[name][1]
 
@@ -66,11 +69,31 @@ class List:
 			actual = actual.getNext()
 		return None
 
+	def changeTypeArray(self):
+		actual=self.inicial
+		for i in range(self.count):
+			for key in actual.getTable():
+				temp = actual.getType(key)
+				temp2 = ""
+				if temp[:5] == "array":
+					while temp[:9] == "array de ":
+						temp2 += temp[:9]
+						temp = temp[9:]
+					if temp != 'int' and temp != 'bool' and temp != 'char':
+						buscando = self.search(temp,actual.getLevel())
+						if buscando != None:
+							actual.setType(key,temp2+buscando[0])
+						else:
+							print("La variable "+temp+" no ha sido declarada")
+							exit()
+			actual = actual.getNext()
+		return None
+
 	def printList(self):
 		actual = self.inicial
 		while actual != None:
 			for key in sorted(actual.getTable().keys()):
-				print('\t'*actual.level+'| variable: '+key +' | tipo: '+actual.getType(key))
+				print('\t'*actual.getLevel()+'| variable: '+key +' | tipo: '+actual.getType(key)+' | valor: '+str(actual.getValue(key)))
 			actual = actual.getNext()
 
 '''
