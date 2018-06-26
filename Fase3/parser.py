@@ -36,7 +36,7 @@ precedence = (
 
 # Clase node que permite la creacion de los nodel del arbol sintactico.
 class Node:
-	def __init__(self,type,children=None,leaf=None, tipo = None):
+	def __init__(self,type,children=None,leaf=None, tipo = None, valor=None):
 		self.type = type
 		if children:
 			self.children = children
@@ -44,6 +44,7 @@ class Node:
 			self.children = [ ]
 		self.leaf = leaf
 		self.tipo=tipo
+		self.valor=valor
 	def __str__(self):
 		return str(self.type)
 
@@ -115,14 +116,14 @@ def p_Lista_Variables(p):
 	if (len(p)==6):
 		if p[4]==r':':
 			if not nodoNuevo.search(p[1]):
-				nodoNuevo.add(p[1],p[5].getTipo(),None)
+				nodoNuevo.add(p[1],p[5].getTipo(),p[3].valor)
 			else:
 				print("No puede redeclarar la variable "+p[1])
 				exit()
 			p[0] = Node(p[2], [p[1], p[3]], p[1])
 		else:
 			if not nodoNuevo.search(p[1]):
-				nodoNuevo.add(p[1],nodoNuevo.getType(p[5].getLeaf()),None)
+				nodoNuevo.add(p[1],nodoNuevo.getType(p[5].getLeaf()),p[3].valor)
 			else:
 				print("No puede redeclarar la variable "+p[1])
 				exit()
@@ -282,30 +283,36 @@ def p_Operacion(p):
 	
 	if (len(p) == 2):
 		if isinstance(p[1],int):
-			p[0] = Node('literal entero ('+str(p[1])+')', None, None, 'int')
+			p[0] = Node('literal entero ('+str(p[1])+')', None, None, 'int', int(p[1]))
 		elif (p[1] == 'true'):
-			p[0] = Node('booleano (TRUE)', None, None, 'bool')
+			p[0] = Node('booleano (TRUE)', None, None, 'bool', True)
 		elif (p[1] == 'false'):
-			p[0] = Node('booleano (FALSE)', None, None, 'bool')
+			p[0] = Node('booleano (FALSE)', None, None, 'bool', False)
 		elif isinstance(p[1],Node):
 			p[0] = p[1]
 		else:
 			caracter = re.compile('[\'][a-zA-Z_][\']|["][a-zA-Z_]["]')
 			if caracter.match(p[1]):
-				p[0] = Node('caracter ('+p[1]+')', None, None, 'char')
+				try:
+					p[0] = Node('caracter ('+p[1]+')', None, None, 'char', nodoNuevo.getValue(p[1]))
+				except:
+					p[0] = Node('caracter ('+p[1]+')', None, None, 'char', 0)
 			else:
-				p[0] = Node('variable ("'+p[1]+'")', None, p[1], 'variable')
+				try:
+					p[0] = Node('variable ("'+p[1]+'")', None, p[1], 'variable', nodoNuevo.getValue(p[1]))
+				except:
+					p[0] = Node('variable ("'+p[1]+'")', None, p[1], 'variable', 0)
 	
 	elif (len(p) == 3):
 		if (p[1] == '-'):
 			if (p[2].getTipo()=='int' or p[2].getTipo()=='variable'):
-				p[0]=Node("MENOS UNARIO",  [p[2]], 'menos u', 'int')
+				p[0]=Node("MENOS UNARIO",  [p[2]], 'menos u', 'int', - p[2].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		else:
 			if (p[2].getTipo()=='bool' or p[2].getTipo()=='variable'):
-				p[0]=Node("NOT",  [p[2]], 'not', 'bool')
+				p[0]=Node("NOT",  [p[2]], 'not', 'bool', not p[2].valor)
 			else:
 				print("Operacion invalida")
 				exit()
@@ -317,87 +324,81 @@ def p_Operacion(p):
 		else:
 			p[0] = p[2]
 
-		'''
-		if (p[1].getTipo()!=p[3].getTipo()):
-			global semanticErrorFound
-			semanticErrorFound=True
-		'''
-
 		if (p[2] == '+'):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
-				p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int')
+				p[0] = Node("SUMA", [p[1],p[3]], p[2], 'int', p[1].valor+p[3].valor )
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '-'):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
-				p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int')
+				p[0] = Node("RESTA", [p[1],p[3]], p[2], 'int',p[1].valor-p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '*'):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
-				p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int')
+				p[0] = Node("MULTIPLICACION", [p[1],p[3]], p[2], 'int', p[1].valor*p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '/'):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
-				p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int')
+				p[0] = Node("DIVISION", [p[1],p[3]], p[2], 'int', p[1].valor/p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '%'):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'variable'):
-				p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int')
+				p[0] = Node("MODULO", [p[1],p[3]], p[2], 'int', p[1].valor%p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '<'):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("MENOR QUE", [p[1],p[3]], p[2], 'bool', p[1].valor<p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '<='):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("MENOR O IGUAL QUE", [p[1],p[3]], p[2], 'bool',p[1].valor<=p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '>'):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("MAYOR", [p[1],p[3]], p[2], 'bool',p[1].valor>p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '>='):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("MAYOR QUE", [p[1],p[3]], p[2], 'bool', p[1].valor>=p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '='):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("IGUAL QUE", [p[1],p[3]], p[2], 'bool',p[1].valor==p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '/='):
 			if (p[1].getTipo() == 'int' or p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'int' or p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("DESIGUAL QUE", [p[1],p[3]], p[2], 'bool',p[1].valor!=p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '/\\'):
 			if (p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("CONJUNCION", [p[1],p[3]], p[2], 'bool',p[1].valor and p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
 		elif (p[2] == '\/'):
 			if (p[1].getTipo() == 'bool' or p[1].getTipo() == 'variable') and (p[3].getTipo() == 'bool' or p[3].getTipo() == 'variable'):
-				p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool')
+				p[0]=Node("DISYUNCION", [p[1],p[3]], p[2], 'bool',p[1].valor or p[3].valor)
 			else:
 				print("Operacion invalida")
 				exit()
@@ -470,7 +471,7 @@ def p_OpCaracter(p):
 			p[2] = Node('-Variable: '+str(p[2]), None,p[2], 'variable')
 
 		
-		p[0] = Node('VALOR ASCII',[p[2]], 'ascii', p[2].getTipo())
+		p[0] = Node('VALOR ASCII',[p[2]], 'ascii', p[2].getTipo(), p[2].valor)
 	
 	else:
 		if isinstance(p[1],Node):
