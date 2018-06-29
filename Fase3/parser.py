@@ -684,12 +684,12 @@ def main():
 	lista.changeTypeArray()
 	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
-		printTree(result, 0)
 		verifyVariable(result,-1)
 		verifySemantics(result)
 		print('\n***********************\n** TABLA DE SIMBOLOS **\n***********************\n')
 		
 		lista.printList()
+		printTree(result, 0)
 
 #Llamada a la funcion
 main()
