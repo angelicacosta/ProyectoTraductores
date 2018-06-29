@@ -162,7 +162,7 @@ def p_Tipo(p):
 			p[0].addTipo(p[6].getTipo())
 		else:
 			p[0].setLeaf(p[6])
-			p[0].addTipo('variable')
+			p[0].addTipo(p[6])
 	
 	else: 
 		if(p[1]=='int'):
@@ -553,23 +553,7 @@ def verifyVariable(nodo, level):
 				else:
 					print("La variable "+nodo.children[i].getLeaf()+" no ha sido declarada")
 					exit()
-			
-			elif temp != None:
-				if temp[:5] == "array":
-					print("encontramos un array "+nodo.children[i].getLeaf())
-					temp2 = ""
-					while temp[:9] == "array de ":
-						temp2 += temp[:9]
-						temp = temp[9:]
-						
-					if temp == 'variable':
-						buscando = lista.search(nodo.children[i].getLeaf(),level)
-						if buscando != None:
-							nodo.children[i].setTipo(temp2+buscando[0])
-						else:
-							print("La variable "+nodo.children[i].getLeaf()+" no ha sido declarada")
-							exit()
-	
+
 
 #Funcion que verifica si las variables ya fueron declaradas
 def verifySemantics(nodo):
@@ -686,7 +670,7 @@ def verifySemantics(nodo):
 
 
 def main():
-	global actualLevel
+	global actualLevel, lista
 	if (len(sys.argv) != 2):
 		print("Usage: python3 parser.py nombreArchivo")
 		return -1
@@ -697,7 +681,7 @@ def main():
 	# Se abre el archivo con permisos de lectura
 	string = str(open(str(sys.argv[1]),'r').read())
 	result = parser.parse(string)
-	
+	lista.changeTypeArray()
 	#Si no hay errores, imprime el arbol.
 	if (not lexerErrorFound) and (not parserErrorFound) and (not semanticErrorFound):
 		printTree(result, 0)
