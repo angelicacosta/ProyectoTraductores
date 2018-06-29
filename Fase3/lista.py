@@ -93,7 +93,7 @@ class List:
 		actual = self.inicial
 		while actual != None:
 			for key in sorted(actual.getTable().keys()):
-				print('\t'*actual.getLevel()+'| variable: '+key +' | tipo: '+actual.getType(key)+' | valor: '+str(actual.getValue(key)))
+				print('\t'*actual.getLevel()+'| variable: '+key +' | tipo: '+actual.getType(key))
 			actual = actual.getNext()
 
 '''
