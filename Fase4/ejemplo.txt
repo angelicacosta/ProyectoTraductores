@@ -1,0 +1,7 @@
+with
+	var a<-2, b, c : int
+	var e : bool
+begin
+	b <- a - 2;
+	c <- (a * b) + 23 / 0;
+end
